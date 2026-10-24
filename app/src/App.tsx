@@ -1,4 +1,9 @@
-import { Component, useState, type ReactNode } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
+import { loadConfig, saveLead } from './sales/store';
+import type { Lead } from './sales/types';
+import { BookFlow } from './ui/BookFlow';
+import { Briefing } from './ui/Briefing';
+import { SalesDashboard } from './ui/SalesDashboard';
 import dev from './data/buildings_dev.json';
 import evalSet from './data/buildings_eval.json';
 import { assess } from './engine/assess';
@@ -25,7 +30,12 @@ class Guard extends Component<{ children: ReactNode; onReset: () => void }, { er
   }
 }
 
-type View ={ kind: 'home' } | { kind: 'wizard' } | { kind: 'eval' } | { kind: 'result'; b: Building; a: Assessment };
+type View =
+  | { kind: 'home' } | { kind: 'wizard' } | { kind: 'eval' }
+  | { kind: 'result'; b: Building; a: Assessment; photo?: PhotoFindings }
+  | { kind: 'book'; b: Building; photo?: PhotoFindings }
+  | { kind: 'sent'; lead: Lead }
+  | { kind: 'sales' } | { kind: 'brief'; lead: Lead };
 
 function EvalTable({ onOpen }: { onOpen: (b: Building) => void }) {
   return (
@@ -62,14 +72,32 @@ function EvalTable({ onOpen }: { onOpen: (b: Building) => void }) {
 
 export default function App() {
   const [view, setView] = useState<View>({ kind: 'home' });
-  const open = (b: Building, photo?: PhotoFindings) => setView({ kind: 'result', b, a: assess(b, photo) });
+  const open = (b: Building, photo?: PhotoFindings) => setView({ kind: 'result', b, a: assess(b, photo), photo });
+  const [cfg, setCfg] = useState(loadConfig);
+  const isSales = view.kind === 'sales' || view.kind === 'brief';
+  useEffect(() => {
+    const sync = () => { if (location.hash === '#/sales') setView({ kind: 'sales' }); };
+    sync();
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+  const toggleSales = () => {
+    if (isSales) { history.replaceState(null, '', '#/'); setView({ kind: 'home' }); }
+    else { history.replaceState(null, '', '#/sales'); setView({ kind: 'sales' }); }
+  };
 
   return (
     <div className="min-h-screen font-sans bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <button onClick={() => setView({ kind: 'home' })} className="text-lg font-bold">Heat Pump Ready<span className="text-emerald-600">?</span></button>
-          <button onClick={() => setView({ kind: 'eval' })} className="text-sm text-slate-600 hover:text-slate-900">All 5 buildings</button>
+          <div className="flex items-center gap-4 print:hidden">
+            {!isSales && <button onClick={() => setView({ kind: 'eval' })} className="text-sm text-slate-600 hover:text-slate-900">All 5 buildings</button>}
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={isSales} onChange={toggleSales} />
+              Sales view <span className="text-xs text-slate-400">(demo, would be behind login)</span>
+            </label>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8"><Guard onReset={() => setView({ kind: 'home' })}>
@@ -96,7 +124,23 @@ export default function App() {
         )}
         {view.kind === 'wizard' && <Wizard onDone={open} />}
         {view.kind === 'eval' && <EvalTable onOpen={(b) => open(b)} />}
-        {view.kind === 'result' && <Result a={view.a} b={view.b} onBack={() => setView({ kind: 'home' })} />}
+        {view.kind === 'result' && <Result a={view.a} b={view.b} onBack={() => setView({ kind: 'home' })} onBook={() => setView({ kind: 'book', b: view.b, photo: view.photo })} />}
+        {view.kind === 'book' && (
+          <BookFlow building={view.b} photo={view.photo} onCancel={() => open(view.b, view.photo)}
+            onDone={(lead) => { saveLead(lead); setView({ kind: 'sent', lead }); }} />
+        )}
+        {view.kind === 'sent' && (
+          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+            <h2 className="text-2xl font-bold">Thanks, your request is with nuuEnergy</h2>
+            <p className="mt-2 text-slate-600">Reference {view.lead.id}. Their technical planning team will contact you about the next step. The check stays free and without obligation.</p>
+            <div className="mt-4 flex gap-3">
+              <button onClick={() => setView({ kind: 'home' })} className="rounded-lg bg-slate-100 px-4 py-2">Back to start</button>
+              <button onClick={toggleSales} className="rounded-lg bg-slate-800 px-4 py-2 text-white">Demo: open the sales view</button>
+            </div>
+          </div>
+        )}
+        {view.kind === 'sales' && <SalesDashboard cfg={cfg} setCfg={setCfg} onBrief={(lead) => setView({ kind: 'brief', lead })} />}
+        {view.kind === 'brief' && <Briefing lead={view.lead} cfg={cfg} onBack={() => setView({ kind: 'sales' })} />}
       </Guard></main>
     </div>
   );

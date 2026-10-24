@@ -21,7 +21,7 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
   if (pipe === 'single-pipe') {
     obstacles.push({
       title: 'Single-pipe heating system (Einrohrheizung)',
-      detail: 'Radiators are connected in a loop, so the last ones get cooler water. This usually forces 55–60 °C flow temperature and higher running costs. Way forward: a technician checks whether the end radiators can be enlarged or the loop converted; then it may move to yellow.',
+      detail: 'Radiators are connected in a loop, so the last ones get cooler water. This usually forces 55–60 °C flow temperature and higher running costs. Single-pipe systems are mostly not suitable as they are. Ways forward a technician checks: enlarge the end radiators or convert the loop; a smaller heat pump backed by an electric heating rod for the coldest days; or heat with a heat pump now and insulate later.',
     });
   }
   // Only a measured (bill-based) load can confirm this; a table estimate alone is an unknown, not an obstacle.

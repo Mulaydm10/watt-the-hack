@@ -1,6 +1,7 @@
 import { assess } from '../engine/assess';
 import type { Assessment } from '../engine/types';
 import { DEFAULT_CONFIG, type SalesConfig } from './config';
+import { serviceArea } from './offer';
 import { preCheckCompleteness } from './preCheck';
 import type { Commitment, CommitmentLevel, Lead, Tier } from './types';
 
@@ -23,6 +24,7 @@ export function commitmentLevel(c: Commitment): { level: CommitmentLevel; signal
 
 export type VisitDecision = {
   tier: Tier;
+  outOfArea: boolean;
   reasons: string[];
   commitment: CommitmentLevel;
   commitmentSignals: string[];
@@ -43,13 +45,20 @@ export function visitDecision(lead: Lead, cfg: SalesConfig = DEFAULT_CONFIG, a: 
   const pre = preCheckCompleteness(lead.building, a, lead.preCheck);
   const reasons: string[] = [];
   let tier: Tier | null = null;
+  const area = serviceArea(lead.building.location);
+
+  // Outside nuuEnergy's service area: they cannot send an expert. A logistics fact, not a lead-quality judgement.
+  if (area.status === 'out') {
+    reasons.push('Outside our service area (Munich, Hamburg, Lower Bavaria): we cannot send an expert. Refer to a local installer.');
+    tier = 'D';
+  }
 
   // C: ask for info first
   const contradictions = a.flags.contradictions.filter((x) => x.critical);
-  if (contradictions.length) reasons.push(`Data contradictions to clear first: ${contradictions.map((x) => x.title.toLowerCase()).join('; ')}.`);
-  if (c.ownership === 'tenant') reasons.push('Tenant: the owner must be involved before a visit makes sense.');
-  if (a.heatLoad.bestKw == null) reasons.push('No heat-load estimate yet: ask for the bill or building facts.');
-  if (reasons.length) tier = 'C';
+  if (!tier && contradictions.length) reasons.push(`Data contradictions to clear first: ${contradictions.map((x) => x.title.toLowerCase()).join('; ')}.`);
+  if (!tier && c.ownership === 'tenant') reasons.push('Tenant: the owner must be involved before a visit makes sense.');
+  if (!tier && a.heatLoad.bestKw == null) reasons.push('No heat-load estimate yet: ask for the bill or building facts.');
+  if (!tier && reasons.length) tier = 'C';
 
   // D: not now / nurture
   if (!tier) {
@@ -99,7 +108,7 @@ export function visitDecision(lead: Lead, cfg: SalesConfig = DEFAULT_CONFIG, a: 
   if (capped !== p) steps.push(`Capped to ${pct(capped)}`);
   const ev = Math.round(capped * cfg.averageMarginEur - cfg.visitCostEur);
 
-  return { tier, reasons, commitment: level, commitmentSignals: signals, preCheck: pre, saleProbability: capped, probabilitySteps: steps, expectedValueEur: ev, worthIt: ev > 0 };
+  return { tier, outOfArea: area.status === 'out', reasons, commitment: level, commitmentSignals: signals, preCheck: pre, saleProbability: capped, probabilitySteps: steps, expectedValueEur: ev, worthIt: ev > 0 };
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;

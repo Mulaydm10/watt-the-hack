@@ -42,6 +42,15 @@ describe('visit decision tiers', () => {
     const b = { ...byId('B-03'), building_notes: 'No space for an outdoor unit.' };
     expect(visitDecision(lead(b, COMMITTED, FULL_PRE)).tier).toBe('D');
   });
+  it('outside the service area: D with "outside our service area", never a lead-quality label', () => {
+    const d = visitDecision(lead({ ...byId('B-02'), location: 'Cologne area (50xxx)' }, COMMITTED, FULL_PRE));
+    expect(d.tier).toBe('D');
+    expect(d.outOfArea).toBe(true);
+    expect(d.reasons[0]).toMatch(/Outside our service area/);
+  });
+  it('all 5 test houses are inside the service area', () => {
+    for (const b of all) expect(visitDecision(lead(b)).outOfArea).toBe(false);
+  });
   it('unknown commitment answers alone never give D', () => {
     for (const b of all) expect(visitDecision(lead(b)).tier).not.toBe('D');
   });

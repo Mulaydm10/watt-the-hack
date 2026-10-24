@@ -7,7 +7,7 @@ what we can't tell yet, technician checklist and yearly running costs.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 33 tests (dev references, bad-input cases, AI guard)
+npm test           # 62 tests (engine, bad input, AI guard, path to green, sales tiers, offer rules)
 npm run build
 ```
 Optional AI helper: copy `.env.example` to `.env` and set
@@ -62,3 +62,44 @@ Running costs per year: B-04 heat pump €2,043 vs oil €4,250; B-05 heat pump 
 - Not built: outdoor-unit hints from photos (bonus b), a radiator-output check from known
   Type 11/22/33 sizes (shown as a technician check instead), a German toggle.
 - The AI paths need a key and were only tested with mocked responses.
+
+## Sales side: "Should we send an expert?"
+Two users, one engine:
+1. **Homeowner** gets the honest green/yellow/red answer (unchanged). The "Next step: free expert check"
+   button leads to a remote photo pre-check and a few optional questions about their plans.
+2. **nuuEnergy sales** (header toggle "Sales view", or `#/sales`; would be behind a login) sees every
+   lead with a visit decision mapped to nuuEnergy's own process:
+   - **A: Book on-site visit** (~2 h heating-master visit)
+   - **B: Phone call first** (~30-min technical planning call)
+   - **C: Ask for info first** (contradictions, tenant without owner, no heat-load data)
+   - **D: Not now** (red obstacle, "just curious"), or **Outside our service area** (Munich, Hamburg,
+     Lower Bavaria by postcode); that one is a logistics fact, never a lead-quality label.
+   Each decision has a "Why?" panel, the P(sale) steps and the expected value
+   `P(sale) × margin − visit cost`. A/B leads get a printable technician briefing (window.print).
+
+The technical traffic light is never changed by sales logic (tested for all 5 houses × answer combinations).
+
+### Configuration (`src/sales/config.ts`, `src/sales/offer.ts`)
+- Visit cost, average margin and base P(sale) per tier are **placeholders, nuuEnergy to set**; they are
+  editable live on the sales dashboard and the decisions update immediately.
+- P(sale) nudges per signal (owner, timeline, boiler age, pre-check, verdict) and the 5–90 % cap.
+- Tier A needs ≥ 60 % remote pre-check (meter cabinet 30, outdoor spot 25, bill 20, radiators 15, boiler room 10).
+- Units 5/7/10/12/16/20 kW, published price bands (€29–34k small, €35–45k bigger, before subsidy),
+  KfW 458 2026 subsidy rules (30 % + 16 % old-boiler bonus + up to 40 % income bonus, max 70 % on max €28k;
+  Munich +15 %, Hamburg +20 % city programmes). Always labelled "check current rules";
+  apply before ordering or the subsidy is lost.
+- "Visit fee credited if you buy" is **off by default**: nuuEnergy promises a free, no-obligation check.
+
+### Fairness and GDPR
+- No ML and no hidden scores; every rule and weight is visible.
+- Never scored on income, nationality, age, gender or name. The optional income question only feeds the
+  homeowner's own subsidy calculator and never leaves their device.
+- The homeowner sees our data warnings and confirms their details (nuuEnergy's terms make the customer
+  responsible for correct information), sees exactly what is shared, gives consent, and is told they can
+  object to marketing profiling at any time.
+- Demo data is stored only in the browser (localStorage); no real personal data.
+- We use "commitment signals", "readiness to buy" and "visit priority", never suspicion.
+
+### Honest limitation
+The conversion probabilities are company assumptions, not learned from data. Logging visit outcomes
+(P1, not built) would let nuuEnergy tune the rules over time; they stay rule-based.

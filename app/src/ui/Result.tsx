@@ -98,7 +98,7 @@ function PathToGreenCard({ a, b }: { a: Assessment; b: Building }) {
   );
 }
 
-export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: () => void }) {
+export function Result({ a, b, onBack, onBook }: { a: Assessment; b: Building; onBack: () => void; onBook?: () => void }) {
   const [maths, setMaths] = useState(false);
   const L = LIGHT[a.verdict];
   const h = a.heatLoad;
@@ -106,7 +106,10 @@ export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: (
 
   return (
     <div className="space-y-5">
-      <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800">← Start over</button>
+      <div className="flex items-center justify-between">
+        <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800">← Start over</button>
+        {onBook && <button onClick={onBook} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Next step: free expert check →</button>}
+      </div>
 
       <section className={`flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm ring-4 ${L.ring} sm:flex-row sm:items-center`}>
         <div className="flex shrink-0 gap-2 rounded-full bg-slate-900 p-2">

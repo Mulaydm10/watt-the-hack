@@ -52,15 +52,16 @@ export const DEFAULT_CONFIG: SalesConfig = {
   minProbability: 0.05,
   maxProbability: 0.9,
   tierAMinPreCheck: 60,
-  visitCreditEnabled: true,
+  // nuuEnergy promises a free, no-obligation check, so this is off; only an option they could choose.
+  visitCreditEnabled: false,
   visitCreditEur: 99,
   visitMinutesFull: 120,
   visitMinutesMin: 60,
 };
 
 export const TIER_INFO: Record<Tier, { label: string; action: string }> = {
-  A: { label: 'A: Send expert now', action: 'Book the on-site visit.' },
-  B: { label: 'B: Video call first', action: '15-minute remote consult; upgrade to a visit when the gaps close.' },
-  C: { label: 'C: Ask for info first', action: 'Send an automated message asking for the missing information.' },
-  D: { label: 'D: Not now / nurture', action: 'Send the info pack and subsidy guide; re-contact later.' },
+  A: { label: 'A: Book on-site visit', action: 'Book the ~2-hour visit by the heating master (heat-load calculation and feasibility check).' },
+  B: { label: 'B: Phone call first', action: 'Do the ~30-minute technical phone call with the planning team; book the visit when the gaps close.' },
+  C: { label: 'C: Ask for info first', action: 'Send an automated message asking for the missing information or photos.' },
+  D: { label: 'D: Not now', action: 'Send the info pack and subsidy guide; re-contact later. Never "rejected".' },
 };
