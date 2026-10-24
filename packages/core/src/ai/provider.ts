@@ -86,12 +86,16 @@ async function callOpenAiCompatible(c: LlmConfig, system: string, content: Conte
         { role: 'system', content: system },
         {
           role: 'user',
-          content: content.map((x) => x.type === 'text' ? x : { type: 'image_url', image_url: { url: `data:${x.image.mediaType};base64,${x.image.data}` } }),
+          // PDFs go as a file part (OpenAI rejects PDFs as image_url); images as image_url.
+          content: content.map((x) => x.type === 'text' ? x
+            : x.image.mediaType === 'application/pdf'
+              ? { type: 'file', file: { filename: 'document.pdf', file_data: `data:application/pdf;base64,${x.image.data}` } }
+              : { type: 'image_url', image_url: { url: `data:${x.image.mediaType};base64,${x.image.data}` } }),
         },
       ],
     }),
   });
-  if (!res.ok) throw new Error(`${c.provider} error ${res.status}`);
+  if (!res.ok) throw new Error(`${c.provider} error ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const body = await res.json();
   return body.choices?.[0]?.message?.content ?? '';
 }
