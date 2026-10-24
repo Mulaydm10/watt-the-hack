@@ -4,6 +4,7 @@ import type { Lead } from '@core/sales/types';
 import { BookFlow } from './ui/BookFlow';
 import { Briefing } from './ui/Briefing';
 import { SalesDashboard } from './ui/SalesDashboard';
+import { LiveSales } from './ui/LiveSales';
 import dev from '@core/data/buildings_dev.json';
 import evalSet from '@core/data/buildings_eval.json';
 import { assess } from '@core/engine/assess';
@@ -35,7 +36,7 @@ type View =
   | { kind: 'result'; b: Building; a: Assessment; photo?: PhotoFindings }
   | { kind: 'book'; b: Building; photo?: PhotoFindings }
   | { kind: 'sent'; lead: Lead }
-  | { kind: 'sales' } | { kind: 'brief'; lead: Lead };
+  | { kind: 'sales' } | { kind: 'brief'; lead: Lead } | { kind: 'live' };
 
 function EvalTable({ onOpen }: { onOpen: (b: Building) => void }) {
   return (
@@ -77,7 +78,9 @@ export default function App() {
   const isSales = view.kind === 'sales' || view.kind === 'brief';
   useEffect(() => {
     const sync = () => setView((v) =>
-      location.hash === '#/sales' ? (v.kind === 'brief' ? v : { kind: 'sales' }) : (v.kind === 'sales' || v.kind === 'brief' ? { kind: 'home' } : v));
+      location.hash === '#/live' ? { kind: 'live' }
+        : location.hash === '#/sales' ? (v.kind === 'brief' ? v : { kind: 'sales' })
+        : (v.kind === 'sales' || v.kind === 'brief' || v.kind === 'live' ? { kind: 'home' } : v));
     sync();
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
@@ -93,6 +96,7 @@ export default function App() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <button onClick={() => setView({ kind: 'home' })} className="text-lg font-bold">Heat Pump Ready<span className="text-emerald-600">?</span></button>
           <div className="flex items-center gap-4 print:hidden">
+            <button onClick={() => { history.replaceState(null, '', '#/live'); setView({ kind: 'live' }); }} className="text-sm font-semibold text-emerald-700 hover:text-emerald-900">Live leads</button>
             {!isSales && <button onClick={() => setView({ kind: 'eval' })} className="text-sm text-slate-600 hover:text-slate-900">All 5 buildings</button>}
             <label className="flex items-center gap-2 text-sm text-slate-600">
               <input type="checkbox" checked={isSales} onChange={toggleSales} />
@@ -140,6 +144,7 @@ export default function App() {
             </div>
           </div>
         )}
+        {view.kind === 'live' && <LiveSales />}
         {view.kind === 'sales' && <SalesDashboard cfg={cfg} setCfg={setCfg} onBrief={(lead) => setView({ kind: 'brief', lead })} />}
         {view.kind === 'brief' && <Briefing lead={view.lead} cfg={cfg} onBack={() => setView({ kind: 'sales' })} />}
       </Guard></main>

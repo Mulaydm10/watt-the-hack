@@ -10,6 +10,7 @@ import { mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, de
 import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
 import { handleChatCompletions } from './elevenlabs';
+import { LeadBook, LEAD_STATUSES } from './leads';
 import { defaultModel, type ModelClient } from './model';
 
 type Handler = (req: IncomingMessage, res: ServerResponse, params: string[], url: URL) => Promise<void>;
@@ -34,6 +35,9 @@ const UPLOAD_PAGE = (id: string) => `<!doctype html><html lang="de"><head><meta 
 <script>async function up(){const f=document.getElementById('f').files[0];if(!f)return;const s=document.getElementById('s');s.textContent='…';const r=await fetch('/sessions/${id}/photos?kind='+document.getElementById('k').value,{method:'POST',headers:{'content-type':f.type||'application/octet-stream'},body:f});s.textContent=r.ok?'Danke! Thank you.':'Fehler / error '+r.status;}</script></body></html>`;
 
 export function buildServer(store: SessionStore, config: ToolConfig, model: ModelClient) {
+  const leads = new LeadBook(config.reportsDir, join(config.reportsDir, '..', 'lead-status.json'));
+  // SALES_TOKEN unset = open (local tests only). On a public URL it must be set.
+  const salesOk = (req: IncomingMessage) => !process.env.SALES_TOKEN || req.headers.authorization === `Bearer ${process.env.SALES_TOKEN}`;
   const routes: [string, RegExp, Handler][] = [
     ['POST', /^\/sessions$/, async (req, res) => {
       const body = await readJson(req);
@@ -120,10 +124,28 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       const lang = url.searchParams.get('lang') === 'en' ? 'en' : 'de';
       json(res, 200, SLOTS.map((s) => ({ id: s.id, group: s.group, mode: s.mode, type: s.type, question: s.question[lang], why: s.why[lang], options: s.options?.map((o) => ({ value: o.value, label: o[lang] })), min: s.min, max: s.max })));
     }],
-    ['GET', /^\/leads\/([\w-]+)\/report$/, async (_req, res, [lead]) => {
-      const f = join(config.reportsDir, `${lead}.json`);
-      if (!existsSync(f)) return json(res, 404, { error: 'unknown lead' });
-      json(res, 200, JSON.parse(readFileSync(f, 'utf8')));
+    // ---- Sales (token-protected: customer contact data) ----
+    ['GET', /^\/leads$/, async (req, res) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
+      json(res, 200, { leads: leads.list(), statuses: LEAD_STATUSES });
+    }],
+    ['GET', /^\/leads\/([\w-]+)$/, async (req, res, [lead]) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
+      const r = leads.report(lead);
+      if (!r) return json(res, 404, { error: 'unknown lead' });
+      json(res, 200, { report: r, status: leads.status(lead) });
+    }],
+    ['GET', /^\/leads\/([\w-]+)\/report$/, async (req, res, [lead]) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
+      const r = leads.report(lead);
+      if (!r) return json(res, 404, { error: 'unknown lead' });
+      json(res, 200, r);
+    }],
+    ['PATCH', /^\/leads\/([\w-]+)$/, async (req, res, [lead]) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
+      const st = leads.update(lead, await readJson(req));
+      if (!st) return json(res, 404, { error: 'unknown lead' });
+      json(res, 200, st);
     }],
     ['GET', /^\/upload\/([\w-]+)$/, async (_req, res, [id]) => {
       if (!store.get(id)) { res.writeHead(404).end('Link expired'); return; }
@@ -137,6 +159,7 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       json(res, 200, { config: config.outcome, preview });
     }],
     ['PUT', /^\/settings\/outcomes$/, async (req, res) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
       config.outcome = mergeOutcomeConfig(await readJson(req));
       saveOutcomeConfig(config.outcome);
       json(res, 200, { config: config.outcome });
@@ -151,7 +174,7 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
   ];
 
   return createServer(async (req, res) => {
-    if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE', 'access-control-allow-headers': 'content-type' }).end(); return; }
+    if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE', 'access-control-allow-headers': 'content-type, authorization' }).end(); return; }
     const url = new URL(req.url ?? '/', 'http://x');
     for (const [method, re, h] of routes) {
       const m = url.pathname.match(re);
