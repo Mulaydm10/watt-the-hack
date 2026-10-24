@@ -101,7 +101,8 @@ export const TOOLS: Tool[] = [
         if (x.slot === 'lang' && (x.value === 'de' || x.value === 'en')) ctx.session.lang = x.value;
         return setSlot(ctx.session.profile, x.slot, x);
       });
-      return { results, state: deriveState(ctx.session) };
+      const nq = nextQuestions(ctx.session.profile, 1).questions[0];
+      return { results, state: deriveState(ctx.session), next_question: nq ? slotView(nq.slot, lang(ctx)) : null };
     },
   },
   {

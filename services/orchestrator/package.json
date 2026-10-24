@@ -1,0 +1,20 @@
+{
+  "name": "@hpr/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Conversation orchestrator: state machine + Astra tool loop + guard + HTTP API.",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "test": "vitest run",
+    "eval:live": "LIVE_AI=1 vitest run test/persona.eval.test.ts"
+  },
+  "dependencies": {
+    "@hpr/agent": "0.1.0",
+    "@hpr/core": "0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
+  }
+}
