@@ -9,7 +9,9 @@ export type Provenance = 'user_said' | 'user_estimate' | 'user_unknown' | 'bill_
 export type SlotValue = { value: unknown; unit?: string; provenance: Provenance; at: string; raw?: string };
 export type ConsumptionValue = { kwh: number; amount: number; unit: 'kwh' | 'litres' | 'm3' };
 /** `mentioned`: the assistant has already told the caller about this finding (it says each one once). */
-export type PhotoRecord = { id: string; kind: string; path: string; at: string; finding?: unknown; mentioned?: boolean };
+export type PhotoRecord = { id: string; kind: string; path: string; at: string; finding?: unknown; mentioned?: boolean;
+  /** analysed = finding ready · stored = kept for the technician, no automatic analysis · failed = analysis error (photo kept). */
+  analysis?: 'analysed' | 'stored' | 'failed'; error?: string };
 export type LocationInfo = { postcode: string; area: string; status: 'in' | 'out' | 'unknown'; region?: string; subsidyTopUp?: string };
 
 export type Profile = {

@@ -282,8 +282,11 @@ export const TOOLS: Tool[] = [
           ph.finding = f;
           return { kind: 'certificate', proposed: f, sentence: photoFindingSentence('certificate', f), note: 'Read the value back and store it with update_profile (slot certificate_kwh_m2a, provenance certificate) only after the caller confirms. It is a cross-check against the bill, never a replacement.' };
         }
+        ph.analysis = 'stored';
         return { kind: ph.kind, note: 'Stored for the technician; no automatic analysis for this kind.' };
       } catch (e) {
+        ph.analysis = 'failed';
+        ph.error = (e as Error).message.slice(0, 200);
         return { error: (e as Error).message, note: 'Photo kept for the technician.' };
       }
     },

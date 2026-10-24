@@ -250,3 +250,22 @@ describe('voice "one moment" filler', () => {
     delete process.env.EL_FILLER_MS; delete process.env.EL_FILLER2_MS;
   });
 });
+
+describe('photo analysis never stays pending', () => {
+  it('an upload whose analysis fails ends as "failed" (photo kept), not "pending" forever', async () => {
+    const saved = { ...process.env };
+    delete process.env.LLM_API_KEY; delete process.env.VITE_LLM_API_KEY; // no AI → analysis must fail cleanly
+    const store = new MemoryStore();
+    const server = buildServer(store, config, new RuleModel());
+    await new Promise<void>((r) => server.listen(0, r));
+    const base = `http://localhost:${(server.address() as AddressInfo).port}`;
+    const { session_id } = await fetch(`${base}/sessions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"lang":"de"}' }).then((r) => r.json());
+    const { photo_id } = await fetch(`${base}/sessions/${session_id}/photos?kind=radiator`, { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: new Uint8Array([255, 216, 255, 224]) }).then((r) => r.json());
+    let st = { status: 'pending' } as { status: string; error?: string };
+    for (let i = 0; i < 40 && st.status === 'pending'; i++) { await new Promise((r) => setTimeout(r, 50)); st = await fetch(`${base}/sessions/${session_id}/photos/${photo_id}`).then((r) => r.json()); }
+    server.close();
+    Object.assign(process.env, saved);
+    expect(st.status).toBe('failed');
+    expect(st.error).toBeTruthy();
+  });
+});

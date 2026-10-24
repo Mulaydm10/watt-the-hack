@@ -39,6 +39,46 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
   const leads = new LeadBook(config.reportsDir, join(config.reportsDir, '..', 'lead-status.json'));
   // SALES_TOKEN unset = open (local tests only). On a public URL it must be set.
   const salesOk = (req: IncomingMessage) => !process.env.SALES_TOKEN || req.headers.authorization === `Bearer ${process.env.SALES_TOKEN}`;
+
+  /** Analyse one photo on a copy of the session and merge only the photo results back (never overwrites answers).
+   *  Always ends in a final state, so a client poll never waits forever. */
+  function analyseInBackground(id: string, photoId: string, kind: string): Promise<void> {
+    // Analyse in the background on a copy; the conversation never waits. Only the photo results are merged
+    // back into the latest saved session, so answers given meanwhile are never overwritten.
+  const s = store.get(id);
+  if (!s) return Promise.resolve();
+  const work = structuredClone(s);
+    return runTool({ session: work, config }, 'analyse_photo', { photo_id: photoId }).then(() => {
+      const fresh = store.get(id);
+      if (!fresh) return;
+      const done = work.profile.photos.find((x) => x.id === photoId);
+      const target = fresh.profile.photos.find((x) => x.id === photoId);
+      if (done && target) { target.finding = done.finding; target.analysis = done.analysis ?? (done.finding ? 'analysed' : 'failed'); target.error = done.error; }
+      if (kind === 'radiator' && work.profile.pipePhoto) fresh.profile.pipePhoto = work.profile.pipePhoto;
+      if (kind === 'meter_cabinet' && work.profile.meterCabinet) fresh.profile.meterCabinet = work.profile.meterCabinet;
+      // Re-merge into the latest answers so anything the caller said meanwhile still wins over the photo.
+      if (kind === 'outdoor' && done?.finding) fresh.profile.outdoor = mergeOutdoorFinding(fresh.profile.outdoor, done.finding as OutdoorFinding);
+      fresh.toolLog.push(...work.toolLog.slice(-1));
+      store.save(fresh);
+      // A photo that arrives after the call updates the lead: rebuild the report (assessment re-run) with the
+      // original promise and write it again; Live leads reads these files. No new e-mail per photo.
+      if (fresh.flags.finished && fresh.leadId && fresh.consent?.share) {
+        const promised = leads.report(fresh.leadId)?.promised_to_customer ?? fresh.outcomeText ?? '';
+        deliverReport(buildReport(fresh, fresh.leadId, promised), { dir: config.reportsDir, webhookUrl: config.webhookUrl }).catch(() => undefined);
+      }
+    }).catch(() => undefined);
+  }
+
+  // Recovery: photos whose analysis was interrupted (e.g. by a restart) are analysed again on start-up.
+  setTimeout(async () => {
+    const dayAgo = Date.now() - 24 * 3600 * 1000;
+    for (const sess of store.list()) {
+      for (const ph of sess.profile.photos) {
+        if (!ph.finding && !ph.analysis && Date.parse(ph.at) > dayAgo) await analyseInBackground(sess.id, ph.id, ph.kind).catch(() => undefined);
+      }
+    }
+  }, 1500);
+
   const routes: [string, RegExp, Handler][] = [
     ['POST', /^\/sessions$/, async (req, res) => {
       const body = await readJson(req);
@@ -80,33 +120,12 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       s.profile.photos.push({ id: photoId, kind, path, at: new Date().toISOString() });
       store.save(s);
       json(res, 201, { photo_id: photoId, status: 'received' });
-      // Analyse in the background on a copy; the conversation never waits. Only the photo results are merged
-      // back into the latest saved session, so answers given meanwhile are never overwritten.
-      const work = structuredClone(s);
-      runTool({ session: work, config }, 'analyse_photo', { photo_id: photoId }).then(() => {
-        const fresh = store.get(id);
-        if (!fresh) return;
-        const done = work.profile.photos.find((x) => x.id === photoId);
-        const target = fresh.profile.photos.find((x) => x.id === photoId);
-        if (done && target) target.finding = done.finding;
-        if (kind === 'radiator' && work.profile.pipePhoto) fresh.profile.pipePhoto = work.profile.pipePhoto;
-        if (kind === 'meter_cabinet' && work.profile.meterCabinet) fresh.profile.meterCabinet = work.profile.meterCabinet;
-        // Re-merge into the latest answers so anything the caller said meanwhile still wins over the photo.
-        if (kind === 'outdoor' && done?.finding) fresh.profile.outdoor = mergeOutdoorFinding(fresh.profile.outdoor, done.finding as OutdoorFinding);
-        fresh.toolLog.push(...work.toolLog.slice(-1));
-        store.save(fresh);
-        // A photo that arrives after the call updates the lead: rebuild the report (assessment re-run) with the
-        // original promise and write it again; Live leads reads these files. No new e-mail per photo.
-        if (fresh.flags.finished && fresh.leadId && fresh.consent?.share) {
-          const promised = leads.report(fresh.leadId)?.promised_to_customer ?? fresh.outcomeText ?? '';
-          deliverReport(buildReport(fresh, fresh.leadId, promised), { dir: config.reportsDir, webhookUrl: config.webhookUrl }).catch(() => undefined);
-        }
-      }).catch(() => undefined);
+      analyseInBackground(id, photoId, kind);
     }],
     ['GET', /^\/sessions\/([\w-]+)\/photos\/([\w-]+)$/, async (_req, res, [id, pid]) => {
       const p = store.get(id)?.profile.photos.find((x) => x.id === pid);
       if (!p) return json(res, 404, { error: 'not found' });
-      json(res, 200, { photo_id: p.id, kind: p.kind, status: p.finding ? 'analysed' : 'pending', finding: p.finding ?? null });
+      json(res, 200, { photo_id: p.id, kind: p.kind, status: p.finding ? 'analysed' : (p.analysis ?? 'pending'), finding: p.finding ?? null, error: p.error ?? null });
     }],
     ['GET', /^\/sessions\/([\w-]+)\/result$/, async (_req, res, [id]) => {
       const s = store.get(id);
