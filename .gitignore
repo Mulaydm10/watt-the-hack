@@ -21,3 +21,10 @@ kit/originals/*.zip
 services/data/
 submissions/pitch/preview/
 submissions/pitch/deck.html
+submissions/video/frames/
+submissions/video/clips/
+submissions/video/qa/
+submissions/video/raw.*
+submissions/video/userclip.*
+submissions/video/convo.json
+submissions/video/raw.stt.json

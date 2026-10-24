@@ -1,0 +1,33 @@
+{
+ "vo": {
+  "v01": "Your house burns four thousand euros of oil. Every. Single. Year.",
+  "v02": "Would a heat pump work here? Today, nobody can tell you, without an expert driving out for a two-hour visit.",
+  "v03": "So we turned it into a phone call.",
+  "v04": "One question at a time. Plain language. Any of eight European languages.",
+  "v05": "Not sure? That’s fine. It never guesses. It flags it for a technician.",
+  "v06": "And the answer is not a vibe. It’s a rules engine, checked against nuuEnergy’s own reference houses. Three for three.",
+  "v07": "AI talks. Rules decide.",
+  "v08": "It reads your radiator photos.",
+  "v09": "It reads your gas bill.",
+  "v10": "And it physically cannot make numbers up.",
+  "v11": "Meanwhile, at nuuEnergy: every lead lands live.",
+  "v12": "Ranked by who to call first, on a map, with consent.",
+  "v13": "And a one-page briefing for the heating master, before the van even leaves.",
+  "v14": "Never asks age. Never asks income. Never asks for bank details.",
+  "v15": "A hundred fifty-five tests. Twenty-seven tools. Eight languages. One engine.",
+  "v16": "And this isn’t a mock-up. It’s live. Watch.",
+  "v17": "Heat Pump Ready. Fewer wasted visits. More homes that say yes."
+ },
+ "call": [
+  ["a", "Hello, this is nuuEnergy’s assistant. We’ll check, for free, whether a heat pump suits your home. nuuEnergy never asks for bank details or passwords."],
+  ["c", "It was built in 1987."],
+  ["a", "Built in 1987, thank you. About how many square metres do you heat?"],
+  ["c", "About 160 square metres."],
+  ["a", "What do you heat with today?"],
+  ["c", "Heating oil, about 2,500 litres a year."],
+  ["a", "That’s about 25,000 kilowatt hours. Are your rooms heated with radiators or underfloor heating?"],
+  ["c", "Radiators. I think it is a single-pipe system."],
+  ["a", "A single-pipe system needs a technician’s closer look, but it doesn’t rule out a heat pump."],
+  ["a", "Your result is yellow. Estimated running costs are 2,043 euros a year, versus 4,250 euros for oil."]
+ ]
+}

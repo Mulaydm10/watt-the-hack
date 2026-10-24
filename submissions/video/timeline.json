@@ -1,0 +1,62 @@
+[
+ {
+  "name": "hook",
+  "start": 0,
+  "len": 15.5
+ },
+ {
+  "name": "call",
+  "start": 15.5,
+  "len": 61
+ },
+ {
+  "name": "result",
+  "start": 76.5,
+  "len": 14
+ },
+ {
+  "name": "photo",
+  "start": 90.5,
+  "len": 5
+ },
+ {
+  "name": "bill",
+  "start": 95.5,
+  "len": 4.5
+ },
+ {
+  "name": "guard",
+  "start": 100,
+  "len": 5
+ },
+ {
+  "name": "live",
+  "start": 105,
+  "len": 22
+ },
+ {
+  "name": "privacy",
+  "start": 127,
+  "len": 5.5
+ },
+ {
+  "name": "stats",
+  "start": 132.5,
+  "len": 6
+ },
+ {
+  "name": "liveintro",
+  "start": 138.5,
+  "len": 4
+ },
+ {
+  "name": "clip",
+  "start": 142.5,
+  "len": 27.57
+ },
+ {
+  "name": "close",
+  "start": 170.07,
+  "len": 8
+ }
+]
