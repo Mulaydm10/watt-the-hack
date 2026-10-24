@@ -1,6 +1,6 @@
 # Agent backend spec: "Heat Pump Ready?" conversational assistant
 
-Status: draft v0.1 (24 Oct 2026). Owner: team NoIdea. Builds on the existing deterministic engine in `app/src/engine/`
+Status: draft v0.2 (24 Oct 2026): teammate parameters mapped (§4.6), ElevenLabs voice (§12), roadmap (§13). Owner: team NoIdea. Builds on the existing deterministic engine in `app/src/engine/`
 and the sales layer in `app/src/sales/`. **Do not re-implement any formula. Every number comes from those modules.**
 
 Placeholders marked **[TEAMMATE]** are waiting on input (location analysis, final question list). Build the
@@ -138,6 +138,85 @@ Age, date of birth, income (except the homeowner-only subsidy calculator, never 
 bank or card details, passwords, ID numbers. If the user volunteers them, do not store them.
 
 **[TEAMMATE]** Final question list and wording (and German versions) replace the drafts above. Keep slot names stable.
+
+### 4.6 Teammate parameter list → conversation plan (v0.2)
+
+The teammate's inventory has ~50 parameters. Asked one by one that is a 30-minute call, too long for an older
+caller on the phone. Every parameter is therefore assigned a **mode**:
+
+- **ASK**: always asked in the call (target: 9 questions, ~5 minutes).
+- **ADAPT**: asked only if `get_next_questions` shows it changes the verdict, confidence, tier or a cost line.
+- **PHOTO/DOC**: collected by SMS upload link (photo or document), never as a spoken question.
+- **TECH**: not asked in the call; listed in the briefing for the 30-min call or the on-site visit. Asked only if the
+  caller volunteers it or clearly knows (e.g., says "I'm an engineer").
+- **SALES**: after the result, with permission, all optional.
+- **CONTACT**: end of call, only with consent.
+
+| Teammate parameter | Mode | Slot / engine field | Effect |
+|---|---|---|---|
+| Postcode or service region | ASK (first) | `location` | `lookup_location`: service area, region, subsidy top-up |
+| Type of home | ASK | `house_type` (new: detached/semi/terraced/apartment/other) | noise/placement flag; apartment → approval path |
+| Owner / representative / renter / unsure | SALES (ASK early if apartment) | `commitment.ownership` (+ `representative`) | tier C "involve the owner" for renters |
+| Number of residential units | ADAPT (only if apartment/multi) | `units_in_building` (new) | >1 → approval needed, shared system likely |
+| Approval needed (landlord / WEG / co-owners) | ADAPT (if renter, apartment or units > 1) | `approval_needed` (new) | tier C; report flag |
+| Construction year | ASK | `construction_year` | method A band; single-pipe prior |
+| Heated floor area | ASK | `floor_area_m2` | both methods |
+| Number of heated rooms | ADAPT (if area looks implausible) | `rooms` | contradiction check (m²/room) |
+| Number of floors | TECH | `floors` (new) | briefing only (pipe runs, indoor space) |
+| Insulation / renovation status | ASK | `renovation_status` | method A band, combination rule |
+| Renovation measures (windows, roof, façade, doors) | ADAPT (if renovated) | `renovation_measures[]` → `building_notes` | partial vs full; insulation tips |
+| Year of each renovation | ADAPT (only if it decides partial vs full) | `renovation_years` (new) | old measures (<1995) count as partial |
+| Energy certificate rating / demand | PHOTO/DOC (or ADAPT if known) | `certificate_kwh_m2a` (new) | **new cross-check**: bill vs certificate → contradiction if > 40 % apart; never replaces the bill |
+| Heating fuel | ASK | `energy_carrier` (+ biomass, other → no fixed price) | cost comparison |
+| Heater type and model | PHOTO/DOC (boiler-room photo) / TECH | `heater_model` (new) | briefing |
+| Heater age / installation year | ASK | `commitment.boiler` + `boiler_year` | +16 % subsidy if ≥ 20 y; urgency |
+| Location of the current heater | TECH | `heater_location` (new) | briefing (indoor unit placement) |
+| Heater also provides hot water | ASK | `hot_water_via_heating` | method B hot-water deduction |
+| Annual consumption | ASK (or bill photo) | `annual_consumption_kwh` | method B, costs |
+| Consumption unit | ASK (same turn) | converted in `update_profile` | L/m³ × 10 |
+| Consumption includes hot water | ADAPT (if hot water is separate or unclear) | drives `hot_water_via_heating` | no deduction if hot water is made elsewhere |
+| Current flow temperature | TECH (ADAPT if known) | `flow_temperature_c` | JAZ; usually unknown, technician tests 55 °C |
+| System problems / comfort issues | ADAPT (open question, radiators only) | `comfort_issues` (new) | uneven heat → "radiators may be undersized" unknown + tech check |
+| Heat emitters (radiators, underfloor, wall, ceiling, mixed) | ASK | `heat_distribution` (+ `wall`/`ceiling`) | JAZ. **Decision needed:** treat wall/ceiling heating like underfloor (low temperature, JAZ 4.0)? Guardrails don't define it; default = like underfloor with a technician check |
+| Share of each emitter type | ADAPT (if mixed) | `emitter_share` (new) | briefing; radiator circuit still sets flow temp |
+| Pipe system | ADAPT (radiators + built < 1980 or apartment) → PHOTO | `pipe_system` | #1 obstacle; photo classifier |
+| Radiator type and size | PHOTO / TECH | `PhotoFindings.radiator_type` | 55 °C output check (future) |
+| Rooms heat evenly | ADAPT (with comfort issues) | `comfort_issues` | as above |
+| Hydraulic balancing done | TECH | `hydraulic_balancing` (new) | tip / tech check; KfW requires it anyway |
+| Number of people | ASK | `persons_in_household` | hot-water deduction |
+| Hot-water system (central / electric / HP water heater) | ADAPT (if "heater makes hot water" = no/unsure) | `hot_water_system` (new) → `hot_water_via_heating` | deduction |
+| Hot-water tank present | TECH | `hot_water_tank` (new) | indoor space; briefing |
+| Hot-water usage | TECH | — | not used (fixed 1,000 kWh/person rule) |
+| Planned household changes | ADAPT (open, end of building part) | `planned_changes` (new) | report note; sizing caution |
+| Indoor location / space for equipment | PHOTO (boiler room) / TECH | `indoor_space` (new) | pre-check, briefing |
+| Outdoor-unit location and access constraints | PHOTO + 1 spoken question | `outdoor_spot` | pre-check; tight-placement flag |
+| Distance to windows / neighbour | ASK in the outdoor question | `outdoor_spot.neighbour_distance_m` | noise flag (TA Lärm, AGB 7.7) |
+| Noise or planning concerns | ADAPT (open) | `noise_concerns` (new) | report flag; tech check |
+| Access route for installation | PHOTO / TECH | `access_route` (new) | briefing |
+| Meter cabinet condition | PHOTO | `meter_cabinet` | upgrade-cost risk |
+| Electrical connection / upgrade needs | TECH | — | always a technician check (guardrails) |
+| PV system or battery | ADAPT (one yes/no) | `pv_battery` (new) | report: self-consumption potential (no extra price maths; no fixed PV price given) |
+| Chimney, oil tank, other removal | ADAPT (if oil, or old boiler) | `removals[]` (new) | cost-driver line; briefing |
+| Desired timeframe | SALES | `commitment.timeline` | tier, P(sale) |
+| Heater working / urgent | SALES (ASK early if caller mentions a breakdown) | `commitment.boiler = broken` | urgency, tier |
+| Photos available | PHOTO/DOC | upload links | pre-check completeness |
+| Documents (bills, certificate, records, floor plans) | PHOTO/DOC | `documents[]` | bill reader; certificate cross-check |
+| Preferred language | ASK (very first, or detected) | `lang` (de/en) | ElevenLabs voice + templates |
+| Preferred contact method and details | CONTACT | `contact` | only with consent |
+
+**Resulting call script (target ≈ 9 spoken questions + adaptive extras):**
+language → postcode → house type → year built → heated area → fuel + yearly amount (or "send bill photo") →
+emitters → people + does the boiler make hot water → boiler age → renovation done? → *(adaptive: pipe system,
+other heat sources, unused floors, comfort issues, PV, approvals)* → read-back → result → *(sales, with permission)* →
+consent + contact → SMS link for photos/documents.
+
+**New engine rules this introduces (must be tested on B-01..B-05 before use):**
+1. Energy-certificate cross-check (contradiction only, never changes the estimate).
+2. Wall/ceiling heating mapped to low-temperature emitters (pending decision).
+3. Comfort issues → "radiators may be undersized" unknown (yellow, never red).
+4. Hot water made elsewhere → no hot-water deduction (already supported via `hot_water_via_heating=false`).
+5. Apartment / units > 1 / approval needed → sales tier C "involve owner/association" (technical verdict unchanged).
+6. Biomass/other fuel → no current-cost comparison (as district heating today).
 
 ---
 
@@ -279,21 +358,72 @@ docs/AGENT_BACKEND_SPEC.md                this file
   declines/does not store.
 - Acceptance for the demo: B-02, B-04, B-05 reachable by conversation with the same verdicts/tiers as the web app.
 
-## 12. Milestones (suggested)
-1. Move engine to `packages/core`; MCP server with `lookup_location` (stub), `update_profile`, `assess_building`,
-   `estimate_costs`, `visit_decision`, `create_lead`, `send_sales_report` (to a local file/webhook).
-2. Orchestrator with state machine, `get_next_questions`, number/verdict guard, scripted-conversation tests.
-3. Photo tools + upload links; bill reader.
-4. Outcome templates (§6), consent, report delivery to the real channel.
-5. Teammate's location module + final question list; German.
-6. Live persona evals; tune prompts (not rules).
+## 12. Voice: ElevenLabs
+
+The customer talks to an **ElevenLabs Conversational AI agent** (phone via Twilio/SIP, or web widget).
+Verify exact feature names against the current ElevenLabs Agents docs before building.
+
+**Recommended wiring (option A): ElevenLabs does voice, we do the brain.**
+```
+ Caller ──phone/web──► ElevenLabs agent (STT, TTS, turn-taking, voice)
+                            │  "Custom LLM" = OpenAI-compatible endpoint
+                            ▼
+                 Orchestrator /v1/chat/completions (ours)
+                   - session state, state machine, next-question
+                   - Astra (gpt-6-astra) + MCP tools
+                   - number / verdict / pressure guard
+                            │ tool calls
+                            ▼
+                 MCP server "heatpump-tools"
+ ElevenLabs post-call webhook ──► orchestrator: transcript + recording link → sales report
+```
+- Why A: the guard (no invented numbers, verdict only from tools) and the state machine stay in our code. If
+  ElevenLabs called Astra and the tools directly (option B: built-in LLM + server tools/MCP), we'd lose that control.
+- Option B is acceptable as a **fallback for the demo** if custom-LLM latency is a problem: register our tools as
+  ElevenLabs server tools (webhooks to the MCP handlers) and put the rules in the agent prompt. The guard then only runs
+  on tool outputs.
+
+**Voice-specific requirements:**
+- **Language:** German and English voices; `lang` slot chosen in the first turn (or from caller's first words).
+- **Pace for older callers:** slower speaking rate, longer end-of-turn silence (patience before the agent replies),
+  allow interruptions, offer "shall I repeat that?".
+- **Numbers by voice:** read postcodes digit by digit ("eight, two, three…"), years as years, amounts with units;
+  always confirm ("So that's two thousand five hundred litres of oil a year, right?").
+- **Latency budget:** deterministic tools < 300 ms. AI photo/bill tools are **asynchronous** (≈20 s): the agent says
+  "I'll have our system look at the photos; the result goes to our team" and never waits in silence.
+- **Photos/documents:** voice can't carry them; `request_photo_link` sends an SMS/e-mail upload link during the call;
+  results are attached to the lead when they arrive (and can re-run `assess_building` → updated report).
+- **Short spoken answers:** the orchestrator returns ≤ 2 sentences per turn for voice (`channel: 'voice'`), longer text only in chat.
+- **Recording and consent:** announce recording at the start if recorded; post-call transcript only stored with consent.
+- **Handoff:** "speak to a person" → `handoff_to_human` → ElevenLabs transfer to a phone number (or callback promise).
+- **Scam-safety line** in the greeting: "nuuEnergy will never ask you for bank details or passwords."
+
+## 13. Roadmap
+
+| Phase | Deliverable | Depends on | Done when |
+|---|---|---|---|
+| **0. Decisions (today)** | Answers to §14 open inputs: report channel, callback promises, consent text, wall/ceiling heating rule, ElevenLabs option A/B | you + team | written in this doc |
+| **1. Core package** | Move `engine`, `sales`, `ai` to `packages/core`; web app still green (65 tests) | — | app builds, tests pass |
+| **2. Slots v0.2** | Profile model with all §4.6 slots + provenance; `update_profile` validation, unit conversion, read-back text; new engine rules 1–6 behind tests | teammate list (received) | B-01..B-05 results unchanged; new rules tested |
+| **3. MCP server** | Tools from §5 (location stubbed → real once location analysis arrives) | 1, 2 | tool unit tests on 5 houses |
+| **4. Orchestrator** | State machine, `get_next_questions` (ASK/ADAPT logic), guard, chat API, scripted-conversation tests per §6 row | 3 | scripted runs reach same verdict/tier as web app |
+| **5. Outcomes + sales report** | Templates (en/de), consent, lead + report JSON/summary, briefing link, delivery to chosen channel | 4, decisions | sample report received by sales channel |
+| **6. ElevenLabs voice** | Agent configured (voices de/en, pacing), custom-LLM endpoint, SMS photo link, post-call webhook, human transfer | 4, 5, ElevenLabs account | end-to-end call for B-02 / B-04 / B-05 personas |
+| **7. Location module** | Teammate's location analysis as `lookup_location` outputs (+ engine changes only if agreed and re-tested) | teammate | location results in report |
+| **8. Evals + polish** | Simulated older-caller persona evals (voice + chat), safety evals, latency check, prompt tuning (not rule tuning) | 6 | ≤ 25 turns, 0 guard violations, correct verdicts |
+
+Demo cut (if time is short): phases 1, 3, 4 (chat only), 5 with report to a local file/Slack, then 6 using option B.
 
 ---
 
-## 13. Open inputs needed
+## 14. Open inputs needed
 See the chat summary; tracked here:
-- [ ] **[TEAMMATE] Location analysis:** inputs, outputs and data sources (see §5 `lookup_location`).
-- [ ] **[TEAMMATE] Final question list** with wording (en + de), order, and which are must-have.
+- [ ] **[TEAMMATE] Location analysis:** still missing. The parameter list only says "postcode or service region".
+      Need: what location determines, the outputs, and the data sources (see §5 `lookup_location`).
+- [x] Parameter list received (v0.2, mapped in §4.6). Still needed: final spoken wording in German + English for the ASK questions.
+- [ ] Wall/ceiling heating: treat like underfloor (JAZ 4.0, technician check)? Yes/no.
+- [ ] ElevenLabs: account/agent access, voices (de/en), phone number (Twilio/SIP) or web widget for the demo,
+      whether custom LLM (option A) is allowed on the plan; SMS provider for photo links.
 - [ ] Sales report destination (CRM webhook / email / Slack) and format they want.
 - [ ] Callback promise (SLA) per tier, and working hours.
 - [ ] Contact details to collect and the consent text (legal/privacy review).
