@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ASSUMPTIONS } from '../engine/constants';
 import type { Assessment, Building, Flag } from '../engine/types';
 
 const LIGHT = {
@@ -120,6 +121,20 @@ export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: (
           <p className="mt-3 text-sm text-slate-500">Pipe system: <b>{a.pipeSystem.value}</b> ({a.pipeSystem.source})</p>
         </Card>
       </div>
+
+      <Card title="Assumptions">
+        <table className="w-full text-sm">
+          <tbody>
+            {ASSUMPTIONS.map((x) => (
+              <tr key={x.label} className="border-t border-slate-100">
+                <td className="py-1 pr-3 text-slate-600">{x.label}</td>
+                <td className="py-1 pr-3 font-medium">{x.value}</td>
+                <td className="py-1 text-xs text-slate-400">{x.source}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <button onClick={() => setMaths(!maths)} className="font-semibold text-slate-700">{maths ? '▾' : '▸'} Show the maths</button>

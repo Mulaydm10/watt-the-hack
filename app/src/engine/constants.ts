@@ -28,6 +28,29 @@ export const PHOTO_MIN_CONFIDENCE = 0.7;
 /** Confirmed single-pipe: the #1 no-go. Flip to 'yellow' before the pitch if wanted. */
 export const SINGLE_PIPE_VERDICT: 'red' | 'yellow' = 'yellow';
 
+const GUARDRAILS = 'nuuEnergy Technical Guardrails';
+const OURS = 'Our calibration rule (dev cases B-01..B-03)';
+
+/** Every constant the engine uses, with its source, for the "Assumptions" panel. */
+export const ASSUMPTIONS: { label: string; value: string; source: string }[] = [
+  { label: 'Heat-pump electricity', value: `${PRICE_HP_ELECTRICITY * 100} ct/kWh`, source: GUARDRAILS },
+  { label: 'Natural gas', value: `${PRICE_GAS * 100} ct/kWh`, source: GUARDRAILS },
+  { label: 'Heating oil', value: `${PRICE_OIL_PER_LITRE.toFixed(2)} €/L (≈ 17 ct/kWh)`, source: GUARDRAILS },
+  { label: 'Energy content', value: `1 L oil ≈ ${KWH_PER_LITRE_OIL} kWh, 1 m³ gas ≈ ${KWH_PER_M3_GAS} kWh`, source: GUARDRAILS },
+  { label: 'Old-boiler efficiency', value: `${BOILER_EFFICIENCY}`, source: GUARDRAILS },
+  { label: 'Hot water', value: `${HOT_WATER_KWH_PER_PERSON} kWh per person per year`, source: GUARDRAILS },
+  { label: 'Full-load hours', value: `${FULL_LOAD_HOURS} h/year`, source: GUARDRAILS },
+  { label: 'JAZ', value: `${JAZ_UNDERFLOOR} underfloor · ${JAZ_RAD_55} radiators ≤ 55 °C · ${JAZ_RAD_60} radiators 55–60 °C`, source: GUARDRAILS },
+  { label: 'Heat load by age', value: '120–180 / 80–120 / 40–60 / 15–40 W/m²', source: GUARDRAILS },
+  { label: 'Insulation hint above', value: `${INSULATION_HINT_W_PER_M2} W/m²`, source: GUARDRAILS },
+  { label: 'Load too high above', value: `${TOO_HIGH_W_PER_M2} W/m²`, source: OURS },
+  { label: 'Bill implausibly low below', value: `${IMPLAUSIBLY_LOW_W_PER_M2} W/m²`, source: OURS },
+  { label: 'Methods disagree beyond', value: `${DISAGREEMENT_TOLERANCE * 100}%`, source: OURS },
+  { label: 'Radiators likely > 55 °C above', value: `${LIKELY_ABOVE_55_W_PER_M2} W/m²`, source: OURS },
+  { label: 'Photo AI minimum confidence', value: `${PHOTO_MIN_CONFIDENCE * 100}%`, source: OURS },
+  { label: 'Confirmed single-pipe', value: SINGLE_PIPE_VERDICT === 'yellow' ? 'yellow + strong warning' : 'red', source: OURS },
+];
+
 /** W/m² bands by building age (Guardrails 1a). */
 export const BANDS = {
   pre1979: { low: 120, high: 180, label: 'Unrenovated, built before 1979' },

@@ -35,8 +35,9 @@ export function radiators(b: Building, h: HeatLoad, pipe: PipeSystem): Radiators
       likelyAbove55: false,
     };
   }
+  // Not measured, so show the full range: 3.5 if the radiators turn out big enough, 2.8 if not.
   return {
-    jaz: JAZ_RAD_60, jazWorst: JAZ_RAD_60, flowTemp: 'likely 55–60 °C (not measured)',
+    jaz: JAZ_RAD_55, jazWorst: JAZ_RAD_60, flowTemp: 'likely 55–60 °C (not measured)',
     reason: `${prefix}Flow temperature not documented. ${w != null ? `At ${w} W/m² ` : 'Without a heat-load figure '}the existing radiators probably need 55–60 °C; JAZ 3.5 is possible if radiators are large enough.`,
     likelyAbove55: true,
   };

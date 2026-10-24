@@ -151,7 +151,12 @@ export function Wizard({ onDone }: { onDone: (b: Building, photo?: PhotoFindings
         <button type="button" disabled={step === 0} onClick={() => setStep(step - 1)} className="rounded-lg px-4 py-2 text-slate-600 disabled:opacity-30">Back</button>
         {step < 2
           ? <button type="button" onClick={() => setStep(step + 1)} className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white">Next</button>
-          : <button type="button" onClick={finish} className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white">Show my result</button>}
+          : (
+            <div className="flex gap-2">
+              <button type="button" onClick={() => onDone(b)} className="rounded-lg bg-slate-100 px-5 py-2 text-slate-700">Skip photos</button>
+              <button type="button" onClick={finish} className="rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white">Show my result</button>
+            </div>
+          )}
       </div>
     </div>
   );

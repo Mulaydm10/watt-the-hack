@@ -24,7 +24,7 @@ export function verdict(h: HeatLoad, r: Radiators, f: Flags, pipe: PipeSystem): 
     if (f.obstacles.length) f.obstacles.forEach((o) => reasons.push(`Strong warning: ${o.title}.`));
     criticalContradictions.forEach((c) => reasons.push(`Data contradiction: ${c.title}.`));
     criticalUnknowns.forEach((u) => reasons.push(`Can't tell yet: ${u.title}.`));
-    if (r.likelyAbove55) reasons.push(`Radiators probably need ${r.flowTemp.replace(/ \(.*\)/, '').replace(/^likely /, '')}, so the heat pump runs less efficiently (JAZ ${r.jaz}).`);
+    if (r.likelyAbove55) reasons.push(`Radiators probably need ${r.flowTemp.replace(/ \(.*\)/, '').replace(/^likely /, '')}, so the heat pump runs less efficiently (JAZ ${r.jazWorst === r.jaz ? r.jaz : `${r.jaz}–${r.jazWorst}`}).`);
     if (h.bestWPerM2 != null && h.bestWPerM2 > INSULATION_HINT_W_PER_M2) reasons.push(`Heat load of ${h.bestWPerM2} W/m² is on the high side.`);
     if (h.bestKw == null) reasons.push('Not enough data to estimate the heat load.');
     v = f.obstacles.length || reasons.length ? 'yellow' : 'green';
