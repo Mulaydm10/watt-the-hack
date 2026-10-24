@@ -47,6 +47,44 @@ describe.skipIf(!LIVE)('live AI', () => {
     expect(rows).toHaveLength(5);
   }, 180_000);
 
+  it('direct classifier + 3-look majority vote, leave-one-out', async () => {
+    const { classifyPipePhotosVoted } = await import('./classifyPipePhoto');
+    const rows: string[] = [];
+    let correct = 0;
+    let wrongConfident = 0;
+    for (const p of PHOTOS) {
+      const file = new File([readFileSync(join(PUBLIC, 'examples', p.file))], p.file, { type: 'image/jpeg' });
+      const t0 = Date.now();
+      const r = await classifyPipePhotosVoted([file], null, { excludeExample: p.file });
+      const ok = r.label === p.truth;
+      if (ok) correct++;
+      if (!ok && r.label !== 'unclear') wrongConfident++;
+      rows.push(`${ok ? 'OK  ' : 'MISS'} ${p.file.padEnd(42)} truth=${p.truth.padEnd(11)} got=${r.label.padEnd(11)} conf=${r.confidence.toFixed(2)} agree=${r.agreement.toFixed(2)} ${Date.now() - t0}ms`);
+    }
+    console.log(`\nDIRECT+VOTE (leave-one-out): ${correct}/5 correct, ${wrongConfident} confidently wrong\n${rows.join('\n')}`);
+    expect(rows).toHaveLength(5);
+  }, 300_000);
+
+  for (const mode of ['leave-one-out', 'zero-shot'] as const) {
+    it(`features + rules + 3-look vote, ${mode}`, async () => {
+      const { classifyPipeFeatures } = await import('./classifyPipePhoto');
+      const rows: string[] = [];
+      let correct = 0;
+      let wrongConfident = 0;
+      for (const p of PHOTOS) {
+        const file = new File([readFileSync(join(PUBLIC, 'examples', p.file))], p.file, { type: 'image/jpeg' });
+        const t0 = Date.now();
+        const r = await classifyPipeFeatures([file], null, mode === 'zero-shot' ? { zeroShot: true } : { excludeExample: p.file });
+        const ok = r.label === p.truth;
+        if (ok) correct++;
+        if (!ok && r.label !== 'unclear') wrongConfident++;
+        rows.push(`${ok ? 'OK  ' : 'MISS'} ${p.file.padEnd(42)} truth=${p.truth.padEnd(11)} got=${r.label.padEnd(11)} conf=${r.confidence.toFixed(2)} agree=${r.agreement} ${Date.now() - t0}ms | ${r.rule}`);
+      }
+      console.log(`\nFEATURES+RULES (${mode}): ${correct}/5 correct, ${wrongConfident} confidently wrong\n${rows.join('\n')}`);
+      expect(rows).toHaveLength(5);
+    }, 300_000);
+  }
+
   it('plain-language rephrase on all 5 houses (guard: no new numbers, same verdict)', async () => {
     const { explainPlainly } = await import('./explain');
     const out: string[] = [];

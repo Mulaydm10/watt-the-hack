@@ -1,6 +1,7 @@
 import { PHOTO_MIN_CONFIDENCE } from '../engine/constants';
 import type { PhotoFindings } from '../engine/types';
 import { askJson, fileToImage, image, text } from './llm';
+import { pipeRules, voteFeatures, type PipeFeatures } from './pipeRules';
 
 // Installer-confirmed examples from nuuEnergy (filenames carry the true label).
 const EXAMPLES = [
@@ -42,6 +43,67 @@ export async function classifyPipePhotos(files: File[], constructionYear: number
   const r = await askJson<Omit<PhotoFindings, 'source'>>(SYSTEM, content);
   const confident = r.label !== 'unclear' && r.confidence >= PHOTO_MIN_CONFIDENCE;
   return { ...r, label: confident ? r.label : 'unclear', evidence: r.evidence ?? [], source: 'ai' };
+}
+
+/**
+ * Direct classifier asked `looks` times independently; majority label wins.
+ * Confidence = mean confidence of the majority × share of looks that agreed, so disagreement lowers it.
+ */
+export async function classifyPipePhotosVoted(files: File[], constructionYear: number | null, opts: { excludeExample?: string; looks?: number } = {}): Promise<PhotoFindings & { agreement: number }> {
+  const n = opts.looks ?? 3;
+  const runs = await Promise.all(Array.from({ length: n }, () => classifyPipePhotos(files, constructionYear, opts.excludeExample)));
+  const counts = new Map<PhotoFindings['label'], PhotoFindings[]>();
+  runs.forEach((r) => counts.set(r.label, [...(counts.get(r.label) ?? []), r]));
+  const [label, group] = [...counts.entries()].sort((a, b) => b[1].length - a[1].length)[0];
+  const agreement = group.length / n;
+  const majority = group.length > n / 2;
+  const conf = (group.reduce((s, r) => s + r.confidence, 0) / group.length) * agreement;
+  const finalLabel = majority && (label === 'unclear' || conf >= PHOTO_MIN_CONFIDENCE) ? label : 'unclear';
+  return {
+    label: finalLabel,
+    confidence: Math.round(conf * 100) / 100,
+    evidence: [`${group.length}/${n} independent looks agreed`, ...group[0].evidence].slice(0, 4),
+    radiator_type: group[0].radiator_type,
+    source: 'ai',
+    agreement,
+  };
+}
+
+const FEATURE_SYSTEM = `You inspect photos of radiator connections in German homes. Report ONLY what is visible; do not classify the heating system.
+For each feature answer true, false, or null if it cannot be seen:
+- pipe_runs_along_wall_between_radiators: one pipe runs horizontally along the wall/skirting from this radiator towards another radiator (a loop).
+- bypass_or_extra_side_port: a short bypass piece between supply and return, or an extra adjustable port on the side of a valve block.
+- valve_top_with_separate_bottom_return: a valve at the top fed by its own pipe AND a separate return connection at the bottom on a different pipe.
+- single_bottom_connection_both_pipes_from_floor: both pipes come from the floor into one bottom connection.
+- compact_valve_block: a compact block (H-block) under the radiator joining two pipes.
+Also radiator_type: count panels from the side/top if visible ("11","22","33"), else "unknown".
+evidence: up to 3 short phrases of exactly what you see.
+Reply with ONLY JSON: {"pipe_runs_along_wall_between_radiators":bool|null,"bypass_or_extra_side_port":bool|null,"valve_top_with_separate_bottom_return":bool|null,"single_bottom_connection_both_pipes_from_floor":bool|null,"compact_valve_block":bool|null,"radiator_type":"11"|"22"|"33"|"unknown","evidence":[...]}`;
+
+// What an installer sees in each example (features only; the label comes from the rules).
+const EXAMPLE_FEATURES: Record<string, Partial<PipeFeatures>> = {
+  '1_single-pipe_classic-loop.jpg': { pipe_runs_along_wall_between_radiators: true, bypass_or_extra_side_port: true },
+  '2_single-pipe_hidden-in-valve-block.jpeg': { compact_valve_block: true, bypass_or_extra_side_port: true, single_bottom_connection_both_pipes_from_floor: true },
+  '3_two-pipe_classic.jpeg': { valve_top_with_separate_bottom_return: true, bypass_or_extra_side_port: false, pipe_runs_along_wall_between_radiators: false },
+  '4_two-pipe_modern-valve-block.jpeg': { compact_valve_block: true, bypass_or_extra_side_port: false, single_bottom_connection_both_pipes_from_floor: true },
+  '5_cant-tell.jpeg': { compact_valve_block: true, bypass_or_extra_side_port: null },
+};
+
+/**
+ * AI describes visible features (3 independent looks, majority vote); fixed rules from the official cue table decide.
+ * `zeroShot` skips the example photos entirely (generalisation test); `excludeExample` drops one (leave-one-out).
+ */
+export async function classifyPipeFeatures(files: File[], constructionYear: number | null, opts: { excludeExample?: string; zeroShot?: boolean; looks?: number } = {}): Promise<PhotoFindings & { rule: string; agreement: number }> {
+  const shots = opts.zeroShot ? [] : await loadExamples();
+  const content = [
+    ...(opts.zeroShot ? [] : [text('Examples of feature reports:')]),
+    ...EXAMPLES.flatMap((e, i) => opts.zeroShot || e.file === opts.excludeExample ? [] : [image(shots[i]), text(`Features: ${JSON.stringify(EXAMPLE_FEATURES[e.file])}`)]),
+    text('Now report the features in these photos:'),
+    ...(await Promise.all(files.slice(0, 5).map(fileToImage))).map(image),
+  ];
+  const looks = await Promise.all(Array.from({ length: opts.looks ?? 3 }, () => askJson<PipeFeatures>(FEATURE_SYSTEM, content)));
+  const { features, agreement } = voteFeatures(looks);
+  return { ...pipeRules(features, agreement, constructionYear), agreement: Math.round(agreement * 100) / 100, source: 'ai' };
 }
 
 /** No-key fallback: three plain questions a homeowner can answer by looking. */

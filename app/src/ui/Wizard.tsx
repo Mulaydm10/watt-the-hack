@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { classifyFromAnswers, classifyPipePhotos, type ManualAnswers } from '../ai/classifyPipePhoto';
+import { classifyFromAnswers, classifyPipePhotosVoted, type ManualAnswers } from '../ai/classifyPipePhoto';
 import { hasLlmKey } from '../ai/llm';
 import { readBill } from '../ai/readBill';
 import { KWH_PER_LITRE_OIL, KWH_PER_M3_GAS } from '../engine/constants';
@@ -69,8 +69,8 @@ export function Wizard({ onDone }: { onDone: (b: Building, photo?: PhotoFindings
   async function finish() {
     let photo: PhotoFindings | undefined;
     if (photos.length && hasLlmKey()) {
-      setBusy('Looking at your photos…');
-      try { photo = await classifyPipePhotos(photos, b.construction_year); } catch { photo = classifyFromAnswers(answers); }
+      setBusy('Looking at your photos (3 independent checks, ~20 s)…');
+      try { photo = await classifyPipePhotosVoted(photos, b.construction_year); } catch { photo = classifyFromAnswers(answers); }
     } else if (Object.values(answers).some((x) => x !== 'unsure')) {
       photo = classifyFromAnswers(answers);
     }
