@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { assess } from '../engine/assess';
-import type { Assessment, Building, PhotoFindings } from '../engine/types';
-import { COST_DRIVERS, NUU_PAYBACK, PAYMENT_TERMS, priceBand, serviceArea, sizeToUnits, subsidyEstimate, type IncomeBand } from '../sales/offer';
-import { loadConfig } from '../sales/store';
-import { NO_COMMITMENT, NO_PRECHECK, type Commitment, type Lead, type PreCheck, type YesNoUnsure } from '../sales/types';
+import { assess } from '@core/engine/assess';
+import type { Assessment, Building, PhotoFindings } from '@core/engine/types';
+import { COST_DRIVERS, NUU_PAYBACK, PAYMENT_TERMS, priceBand, serviceArea, sizeToUnits, subsidyEstimate, type IncomeBand } from '@core/sales/offer';
+import { loadConfig } from '@core/sales/store';
+import { NO_COMMITMENT, NO_PRECHECK, type Commitment, type Lead, type PreCheck, type YesNoUnsure } from '@core/sales/types';
 
 const SKIP = 'Prefer not to say';
 

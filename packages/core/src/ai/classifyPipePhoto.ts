@@ -24,9 +24,13 @@ Also estimate the radiator panel type (11/22/33) if visible, else "unknown".
 Reply with ONLY JSON: {"label":"single-pipe"|"two-pipe"|"unclear","confidence":0..1,"evidence":["short cue", ...],"radiator_type":"11"|"22"|"33"|"unknown"}`;
 
 let examplesCache: Awaited<ReturnType<typeof fileToImage>>[] | null = null;
+// Browser default: the app serves the photos at /examples/. Servers inject a loader that reads from disk.
+let exampleLoader: (file: string) => Promise<Blob> = async (file) => (await fetch(`/examples/${file}`)).blob();
+export function setExampleLoader(loader: (file: string) => Promise<Blob>) { exampleLoader = loader; examplesCache = null; }
+
 async function loadExamples() {
   if (!examplesCache) {
-    examplesCache = await Promise.all(EXAMPLES.map(async (e) => fileToImage(await (await fetch(`/examples/${e.file}`)).blob())));
+    examplesCache = await Promise.all(EXAMPLES.map(async (e) => fileToImage(await exampleLoader(e.file))));
   }
   return examplesCache;
 }

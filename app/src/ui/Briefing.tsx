@@ -1,10 +1,10 @@
-import { assess } from '../engine/assess';
-import type { SalesConfig } from '../sales/config';
-import { TIER_INFO } from '../sales/config';
-import { sizeToUnits } from '../sales/offer';
-import { preCheckTasks } from '../sales/preCheck';
-import type { Lead } from '../sales/types';
-import { visitDecision, visitMinutes } from '../sales/visitDecision';
+import { assess } from '@core/engine/assess';
+import type { SalesConfig } from '@core/sales/config';
+import { TIER_INFO } from '@core/sales/config';
+import { sizeToUnits } from '@core/sales/offer';
+import { preCheckTasks } from '@core/sales/preCheck';
+import type { Lead } from '@core/sales/types';
+import { visitDecision, visitMinutes } from '@core/sales/visitDecision';
 
 // Site checks in order of importance (sales brief P0-6).
 const PRIORITY = ['Meter cabinet', 'Outdoor-unit', 'Pipe system', 'Radiator sizes', 'Exact heat load'];

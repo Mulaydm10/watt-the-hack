@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { classifyFromAnswers, classifyPipePhotosVoted, type ManualAnswers } from '../ai/classifyPipePhoto';
-import { hasLlmKey } from '../ai/llm';
-import { readBill } from '../ai/readBill';
-import { KWH_PER_LITRE_OIL, KWH_PER_M3_GAS } from '../engine/constants';
-import type { Building, PhotoFindings } from '../engine/types';
+import { classifyFromAnswers, classifyPipePhotosVoted, type ManualAnswers } from '@core/ai/classifyPipePhoto';
+import { hasLlmKey } from '@core/ai/llm';
+import { readBill } from '@core/ai/readBill';
+import { KWH_PER_LITRE_OIL, KWH_PER_M3_GAS } from '@core/engine/constants';
+import type { Building, PhotoFindings } from '@core/engine/types';
 
 export const EMPTY: Building = {
   construction_year: null, floor_area_m2: null, renovation_status: null, heat_distribution: null,

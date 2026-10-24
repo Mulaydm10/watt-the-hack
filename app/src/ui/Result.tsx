@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { explainPlainly } from '../ai/explain';
-import { hasLlmKey, providerName } from '../ai/provider';
-import { ASSUMPTIONS } from '../engine/constants';
-import { pathToGreen } from '../engine/pathToGreen';
-import type { Assessment, Building, Flag } from '../engine/types';
+import { explainPlainly } from '@core/ai/explain';
+import { hasLlmKey, providerName } from '@core/ai/provider';
+import { ASSUMPTIONS } from '@core/engine/constants';
+import { pathToGreen } from '@core/engine/pathToGreen';
+import type { Assessment, Building, Flag } from '@core/engine/types';
 
 const LIGHT = {
   green: { dot: 'bg-emerald-500', ring: 'ring-emerald-200', text: 'text-emerald-700', label: 'Green: likely suitable' },

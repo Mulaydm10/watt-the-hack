@@ -1,10 +1,10 @@
 import { Fragment, useMemo, useState } from 'react';
-import { assess } from '../engine/assess';
-import { TIER_INFO, type SalesConfig } from '../sales/config';
-import { DEFAULT_CONFIG } from '../sales/config';
-import { allLeads, clearLeads, saveConfig } from '../sales/store';
-import type { Lead, Tier } from '../sales/types';
-import { visitDecision } from '../sales/visitDecision';
+import { assess } from '@core/engine/assess';
+import { TIER_INFO, type SalesConfig } from '@core/sales/config';
+import { DEFAULT_CONFIG } from '@core/sales/config';
+import { allLeads, clearLeads, saveConfig } from '@core/sales/store';
+import type { Lead, Tier } from '@core/sales/types';
+import { visitDecision } from '@core/sales/visitDecision';
 
 const TIER_STYLE: Record<Tier, string> = { A: 'bg-emerald-100 text-emerald-800', B: 'bg-sky-100 text-sky-800', C: 'bg-amber-100 text-amber-800', D: 'bg-slate-200 text-slate-700' };
 const DOT = { green: 'bg-emerald-500', yellow: 'bg-amber-400', red: 'bg-rose-500' };

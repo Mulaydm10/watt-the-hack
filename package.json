@@ -1,0 +1,9 @@
+{
+  "name": "watt-the-hack",
+  "private": true,
+  "workspaces": ["app", "packages/*", "services/*"],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build -w app"
+  }
+}

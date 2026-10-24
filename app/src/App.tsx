@@ -1,13 +1,13 @@
 import { Component, useEffect, useState, type ReactNode } from 'react';
-import { loadConfig, saveLead } from './sales/store';
-import type { Lead } from './sales/types';
+import { loadConfig, saveLead } from '@core/sales/store';
+import type { Lead } from '@core/sales/types';
 import { BookFlow } from './ui/BookFlow';
 import { Briefing } from './ui/Briefing';
 import { SalesDashboard } from './ui/SalesDashboard';
-import dev from './data/buildings_dev.json';
-import evalSet from './data/buildings_eval.json';
-import { assess } from './engine/assess';
-import type { Assessment, Building, PhotoFindings } from './engine/types';
+import dev from '@core/data/buildings_dev.json';
+import evalSet from '@core/data/buildings_eval.json';
+import { assess } from '@core/engine/assess';
+import type { Assessment, Building, PhotoFindings } from '@core/engine/types';
 import { Result } from './ui/Result';
 import { Wizard } from './ui/Wizard';
 

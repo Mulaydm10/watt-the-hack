@@ -9,7 +9,7 @@ import { assess } from '../engine/assess';
 import type { Building } from '../engine/types';
 
 const LIVE = process.env.LIVE_AI === '1';
-const PUBLIC = join(__dirname, '../../public');
+const PUBLIC = join(__dirname, '../../assets');
 
 // The browser loads few-shot examples from /examples/...; serve them from disk in node.
 const realFetch = globalThis.fetch;
