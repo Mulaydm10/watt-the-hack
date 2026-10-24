@@ -1,0 +1,21 @@
+{
+  "name": "@hpr/mcp-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing the heat-pump assessment tools (stdio or Streamable HTTP).",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "start:http": "tsx src/server.ts --http 8788",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hpr/agent": "0.1.0",
+    "@hpr/core": "0.1.0",
+    "@modelcontextprotocol/sdk": "1.32.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
+  }
+}

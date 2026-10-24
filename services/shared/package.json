@@ -1,0 +1,5 @@
+{
+  "name": "@hpr/services-shared",
+  "private": true,
+  "type": "module"
+}

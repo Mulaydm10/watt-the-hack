@@ -18,3 +18,4 @@ build/
 .vscode/
 *.log
 kit/originals/*.zip
+services/data/
