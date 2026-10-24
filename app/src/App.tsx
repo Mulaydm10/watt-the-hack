@@ -5,6 +5,7 @@ import { BookFlow } from './ui/BookFlow';
 import { Briefing } from './ui/Briefing';
 import { SalesDashboard } from './ui/SalesDashboard';
 import { LiveSales } from './ui/LiveSales';
+import { Landing } from './ui/Landing';
 import dev from '@core/data/buildings_dev.json';
 import evalSet from '@core/data/buildings_eval.json';
 import { assess } from '@core/engine/assess';
@@ -105,28 +106,8 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main className={`mx-auto px-4 py-8 ${view.kind === 'sales' ? 'max-w-none' : 'max-w-5xl'}`}><Guard onReset={() => setView({ kind: 'home' })}>
-        {view.kind === 'home' && (
-          <div className="space-y-8">
-            <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-              <h1 className="text-3xl font-bold">Would a heat pump work in my home?</h1>
-              <p className="mt-2 max-w-2xl text-slate-600">An honest first answer in under three minutes, from your energy bill, a few facts about the house and optional radiator photos. We tell you what we can't know yet, and what a technician must check.</p>
-              <button onClick={() => setView({ kind: 'wizard' })} className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 text-lg font-semibold text-white hover:bg-emerald-700">Start check</button>
-            </section>
-            <section>
-              <h2 className="mb-3 font-semibold text-slate-700">Or try a demo house</h2>
-              <div className="grid gap-3 sm:grid-cols-5">
-                {DEMOS.map((b) => (
-                  <button key={b.building_id} onClick={() => open(b)} className="rounded-xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-200 hover:ring-emerald-400">
-                    <p className="font-bold">{b.building_id}</p>
-                    <p className="text-sm text-slate-600">{b.construction_year} · {b.floor_area_m2} m² · {b.energy_carrier}</p>
-                    <p className="text-xs text-slate-400">{b.heat_distribution} · {b.reference_heating_load_kw != null ? 'dev' : 'eval'}</p>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
+      <main className={`mx-auto px-4 py-8 ${['sales', 'home', 'live'].includes(view.kind) ? 'max-w-none' : view.kind === 'result' ? 'max-w-6xl' : 'max-w-5xl'}`}><Guard onReset={() => setView({ kind: 'home' })}>
+        {view.kind === 'home' && <Landing demos={DEMOS} onStart={() => setView({ kind: 'wizard' })} onOpen={(b) => open(b)} />}
         {view.kind === 'wizard' && <Wizard onDone={open} />}
         {view.kind === 'eval' && <EvalTable onOpen={(b) => open(b)} />}
         {view.kind === 'result' && <Result a={view.a} b={view.b} onBack={() => setView({ kind: 'home' })} onBook={() => setView({ kind: 'book', b: view.b, photo: view.photo })} />}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { explainPlainly } from '@core/ai/explain';
 import { hasLlmKey, providerName } from '@core/ai/provider';
 import { ASSUMPTIONS } from '@core/engine/constants';
+import { resultAreas } from '@core/engine/areas';
+import { CountUp, Ember, Eyebrow, HeatField, STATUS_GLYPH } from './hearth';
 import { pathToGreen } from '@core/engine/pathToGreen';
 import type { Assessment, Building, Flag } from '@core/engine/types';
 
@@ -100,31 +102,52 @@ function PathToGreenCard({ a, b }: { a: Assessment; b: Building }) {
 
 export function Result({ a, b, onBack, onBook }: { a: Assessment; b: Building; onBack: () => void; onBook?: () => void }) {
   const [maths, setMaths] = useState(false);
-  const L = LIGHT[a.verdict];
   const h = a.heatLoad;
   const c = a.costs;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800">← Start over</button>
-        {onBook && <button onClick={onBook} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Next step: free expert check →</button>}
-      </div>
+    <div className="space-y-6">
+      {/* "The Verdict": ember orb + editorial headline + the four areas */}
+      <section className="relative -mx-4 overflow-hidden px-[clamp(20px,4vw,56px)] pb-4 pt-2">
+        <HeatField />
+        <div className="relative flex items-center justify-between">
+          <button onClick={onBack} className="text-sm text-slate-500 hover:text-slate-800">← Start over</button>
+          {onBook && <button onClick={onBook} className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">Next step: free expert check →</button>}
+        </div>
+        <div className="relative mt-8 grid items-center gap-[clamp(28px,5vw,64px)]" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,300px),1fr))' }}>
+          <div className="hpr-rise flex justify-center" style={{ gridColumn: 'span 1' }}>
+            <Ember verdict={a.verdict} size={200} />
+          </div>
+          <div className="min-w-0" style={{ animation: 'hpr-rise .9s .12s cubic-bezier(.2,.7,.2,1) both', gridColumn: 'span 2' }}>
+            <Eyebrow className="text-[var(--amber)]">Your first answer · {a.confidence} confidence{b.building_id ? ` · ${b.building_id}` : ''}</Eyebrow>
+            <h1 className="font-serif-h mt-4 text-[clamp(36px,4.8vw,68px)] font-normal leading-[1.02] tracking-[-0.025em]">{a.headline}</h1>
+            <ul className="mt-5 space-y-2 text-[17px] leading-relaxed text-slate-700">
+              {a.verdictReasons.map((r) => <li key={r} className="flex gap-3"><span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--amber)]" />{r}</li>)}
+            </ul>
+            {h.bestKw != null && (
+              <div className="mt-7 flex flex-wrap gap-x-10 gap-y-4 border-t border-[var(--line)] pt-5">
+                <div><Eyebrow>Heat load</Eyebrow><div className="font-serif-h text-[44px] leading-none"><CountUp value={h.bestKw} format={(n) => n.toFixed(1)} /><span className="text-lg text-slate-500"> kW</span></div></div>
+                {c && <div><Eyebrow>Heat pump per year</Eyebrow><div className="font-serif-h text-[44px] leading-none">€<CountUp value={c.heatPumpEur} /></div></div>}
+                {c?.currentEur != null && <div><Eyebrow>{c.currentLabel} today</Eyebrow><div className="font-serif-h text-[44px] leading-none text-slate-500">€<CountUp value={c.currentEur} /></div></div>}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
-      <section className={`flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm ring-4 ${L.ring} sm:flex-row sm:items-center`}>
-        <div className="flex shrink-0 gap-2 rounded-full bg-slate-900 p-2">
-          {(['red', 'yellow', 'green'] as const).map((k) => (
-            <span key={k} className={`h-10 w-10 rounded-full ${k === a.verdict ? LIGHT[k].dot : 'bg-slate-700'}`} />
-          ))}
-        </div>
-        <div>
-          <p className={`text-sm font-semibold ${L.text}`}>{L.label} · confidence {a.confidence}</p>
-          <h2 className="text-2xl font-bold text-slate-900">{a.headline}</h2>
-          <ul className="mt-2 list-disc pl-5 text-slate-700">
-            {a.verdictReasons.map((r) => <li key={r}>{r}</li>)}
-          </ul>
-          {b.building_id && <p className="mt-2 text-xs text-slate-400">{b.building_id} · {b.location}</p>}
-        </div>
+      <section aria-label="Four result areas" className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))' }}>
+        {resultAreas(b, a).map((x, k) => (
+          <article key={x.key} className="hpr-lift relative overflow-hidden rounded-2xl border border-[var(--line)] bg-white p-5"
+            style={{ animation: `hpr-rise .8s ${250 + k * 90}ms cubic-bezier(.2,.7,.2,1) both` }}>
+            <div className="flex items-center justify-between">
+              <Eyebrow>{x.title}</Eyebrow>
+              <span aria-label={x.status} className="font-mono-h flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold"
+                style={{ color: 'var(--bg)', background: STATUS_GLYPH[x.status][1] }}>{STATUS_GLYPH[x.status][0]}</span>
+            </div>
+            <p className="mt-3 text-[15px] leading-relaxed text-slate-700">{x.reason}</p>
+            <p className="mt-3 border-t border-[var(--line)] pt-3 text-sm text-slate-500"><span className="text-[var(--amber-soft)]">Next ·</span> {x.nextCheck}</p>
+          </article>
+        ))}
       </section>
 
       <PathToGreenCard a={a} b={b} />
