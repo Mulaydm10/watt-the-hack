@@ -28,3 +28,4 @@ submissions/video/raw.*
 submissions/video/userclip.*
 submissions/video/convo.json
 submissions/video/raw.stt.json
+submissions/app/*.apk

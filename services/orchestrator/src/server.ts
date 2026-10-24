@@ -219,6 +219,18 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       const { signed_url } = await r.json();
       json(res, 200, { signed_url, agent_id: agent, expires_in_s: 900, audio: { input: 'pcm_16000', note: 'see agent config for output format' } });
     }],
+    ['GET', /^\/$/, async (_req, res) => { res.writeHead(302, { location: '/app' }); res.end(); }],
+    ['GET', /^\/app\/?$/, async (_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heat Pump Ready?</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1C1510;color:#F3EADB;font-family:system-ui,sans-serif;text-align:center;padding:24px}h1{font-family:Georgia,serif;font-weight:400;font-size:44px;margin:0 0 12px}em{color:#F7C77F}p{color:#CBB9A1;font-size:18px;line-height:1.5;max-width:420px;margin:0 auto 28px}a{display:inline-block;background:#F2A84A;color:#1C1510;font-weight:700;font-size:20px;padding:16px 32px;border-radius:999px;text-decoration:none}small{display:block;margin-top:20px;color:#8C7A66}</style></head><body><main><h1>Heat Pump <em>Ready?</em></h1><p>Would a heat pump work in your home? Install the Android app and just talk to our assistant.</p><a href="/app.apk" download>Download the Android app</a><small>Android 8+ · allow “install unknown apps” when asked · Team NoIdea, WATT THE HACK 2026</small></main></body></html>`);
+    }],
+    ['GET', /^\/app\.apk$/, async (_req, res) => {
+      const f = join(import.meta.dirname, '../../../submissions/app/HeatPumpReady.apk');
+      if (!existsSync(f)) return json(res, 404, { error: 'apk not found' });
+      const buf = readFileSync(f);
+      res.writeHead(200, { 'content-type': 'application/vnd.android.package-archive', 'content-disposition': 'attachment; filename="HeatPumpReady.apk"', 'content-length': buf.length });
+      res.end(buf);
+    }],
     ['GET', /^\/health$/, async (_req, res) => json(res, 200, { ok: true, mail: Boolean(config.mail), webhook: Boolean(config.webhookUrl) })],
   ];
 
