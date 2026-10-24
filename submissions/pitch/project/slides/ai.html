@@ -1,0 +1,14 @@
+<section id="ai" data-transition="fade" style="background:#271E17;color:#F3EADB;font-family:'Geist', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<p style="font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#F2A84A">11 · AI where it helps</p>
+<h2 style="font-family:'Fraunces', Georgia, serif;font-size:72px;font-weight:400;line-height:1.08">AI reads the photos. <i><span style="color:#F7C77F">It never sets the verdict.</span></i></h2>
+<table style="font-size:30px;color:#F3EADB;width:1664px">
+<tr><th style="width:28%;text-align:left">Helper</th><th style="width:40%;text-align:left">What we measured</th><th style="width:32%;text-align:left">Safety rule</th></tr>
+<tr style="background:#2E241C"><td>Radiator photo</td><td>4 of 5 installer photos right, 0 confidently wrong</td><td>Below 70% → “unclear”</td></tr>
+<tr><td>Bill reader</td><td>Real SWM bill: gas 12,945 kWh, €765.02 correct</td><td>Caller confirms first</td></tr>
+<tr style="background:#2E241C"><td>Meter cabinet, outdoor spot</td><td>Real photos: 2 of 4 exact, 0 confidently wrong</td><td>A technician confirms</td></tr>
+<tr><td>Plain-language summary</td><td>5 of 5 kept every number and verdict</td><td>New numbers → rejected</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.45;color:#CBB9A1;width:1560px">Each photo check takes three independent looks and votes. When they disagree, the honest answer is “a technician checks”, which is exactly what the jury asked for.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-family:'Geist Mono', 'Courier New', monospace;font-size:24px;color:#8C7A66">Heat Pump Ready? · 12 · Small samples: signs, not accuracy figures</p>
+<aside>Radiator classifier was tested leave-one-out on nuuEnergy’s 5 installer-labelled photos with gpt-6-astra; the earlier gpt-4o version scored 2 of 5 with one confidently wrong answer. Bill test used SWM’s public sample bill; meter-cabinet and outdoor tests used openly licensed Wikimedia Commons photos.</aside>
+</section>

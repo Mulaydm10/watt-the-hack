@@ -19,3 +19,5 @@ build/
 *.log
 kit/originals/*.zip
 services/data/
+submissions/pitch/preview/
+submissions/pitch/deck.html

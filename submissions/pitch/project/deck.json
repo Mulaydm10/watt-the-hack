@@ -1,0 +1,22 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-24T16:45:00Z" },
+  "lists": "css",
+  "title": "Heat Pump Ready? — nuuEnergy × Team NoIdea",
+  "cover": "cover",
+  "order": ["cover", "problem", "ask", "answer", "flow", "engine", "honesty", "areas", "evalhouses", "pathgreen", "voice", "ai", "sales", "product", "liveleads", "privacy", "built", "next", "close"],
+  "sections": {
+    "s1": { "description": "The problem: one expensive question every homeowner gets stuck on.", "start": "cover" },
+    "s2": { "description": "Our answer: one honest engine for homeowners and for nuuEnergy’s sales team.", "start": "answer" },
+    "s3": { "description": "Proof: calibrated on nuuEnergy’s reference houses, honest by design.", "start": "engine" },
+    "s4": { "description": "AI where it helps: a voice assistant, photo checks and a bill reader, never deciding the verdict.", "start": "voice" },
+    "s5": { "description": "The sales side: which visits are worth paying for, on a live map.", "start": "sales" },
+    "s6": { "description": "What we built today and where it goes next.", "start": "privacy" }
+  },
+  "faces": {
+    "fraunces": { "family": "Fraunces", "href": "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&display=swap" },
+    "geist": { "family": "Geist", "href": "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" },
+    "geist-mono": { "family": "Geist Mono", "href": "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" }
+  },
+  "designSystems": []
+}
