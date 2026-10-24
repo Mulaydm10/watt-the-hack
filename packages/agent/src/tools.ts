@@ -11,7 +11,9 @@ import { visitDecision } from '@hpr/core/sales/visitDecision';
 import { lookupLocation } from './location';
 import { nextQuestions, photoTasks } from './nextQuestions';
 import { outcomeKey, outcomeText, DEFAULT_OUTCOME_CONFIG, type OutcomeConfig } from './outcomes';
-import { meterCabinetFromPhoto, pipeFromPhotos, billFromDocument } from './photoAi';
+import { mergeOutdoorFinding } from '@hpr/core/ai/classifyOutdoorPhoto';
+import { photoFindingSentence } from '@hpr/core/ai/photoSentence';
+import { accessFromPhotos, billFromDocument, boilerRoomFromPhotos, certificateFromDocument, meterCabinetFromPhoto, outdoorFromPhotos, pipeFromPhotos } from './photoAi';
 import { setSlot, toBuilding, toCommitment, toPreCheck, type Provenance } from './profile';
 import { buildLead, buildReport, deliverReport, type MailConfig } from './report';
 import { deriveState, progress, type Session } from './session';
@@ -237,27 +239,45 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'analyse_photo',
-    description: 'Analyse an uploaded photo/document by id (radiator → pipe system, meter_cabinet → upgrade risk, bill → proposed consumption to confirm). Takes ~20 s; tell the caller you are checking.',
+    description: 'Analyse an uploaded photo/document by id (radiator → pipe system, meter_cabinet → upgrade risk, outdoor → rough outdoor-unit spot hint, boiler_room → space for the indoor unit, access → narrow route, bill / certificate → proposed values to confirm). Takes ~20 s; tell the caller you are checking. Mention the returned sentence once, in plain words.',
     parameters: obj({ photo_id: { type: 'string' } }, ['photo_id']),
     handler: async (ctx, { photo_id }) => {
       const p = ctx.session.profile;
       const ph = p.photos.find((x) => x.id === photo_id);
       if (!ph) return { error: 'photo not found' };
+      const pathsOf = (kind: string) => p.photos.filter((x) => x.kind === kind).map((x) => x.path);
       try {
         if (ph.kind === 'radiator') {
-          const f = await pipeFromPhotos(p.photos.filter((x) => x.kind === 'radiator').map((x) => x.path), toBuilding(p).construction_year);
+          const f = await pipeFromPhotos(pathsOf('radiator'), toBuilding(p).construction_year);
           p.pipePhoto = f; ph.finding = f;
-          return { kind: 'radiator', finding: f, note: f.label === 'unclear' ? 'Heating pipe system unclear from the photos. A technician should check whether this is a single-pipe system, because that can require a higher flow temperature.' : 'Used only if the caller did not state the pipe system.' };
+          return { kind: 'radiator', finding: f, sentence: photoFindingSentence('radiator', f), note: f.label === 'unclear' ? 'Heating pipe system unclear from the photos. A technician should check whether this is a single-pipe system, because that can require a higher flow temperature.' : 'Used only if the caller did not state the pipe system.' };
         }
         if (ph.kind === 'meter_cabinet') {
           const f = await meterCabinetFromPhoto(ph.path);
           p.meterCabinet = f.finding; ph.finding = f;
-          return { kind: 'meter_cabinet', finding: f, note: 'An electrician confirms in every case.' };
+          return { kind: 'meter_cabinet', finding: f, sentence: photoFindingSentence('meter_cabinet', f), note: 'An electrician confirms in every case.' };
+        }
+        if (ph.kind === 'outdoor') {
+          // Bonus (b). Fills only outdoor answers the caller left open; stated answers always win.
+          const f = await outdoorFromPhotos(pathsOf('outdoor'));
+          ph.finding = f;
+          p.outdoor = mergeOutdoorFinding(p.outdoor, f);
+          return { kind: 'outdoor', finding: f, sentence: photoFindingSentence('outdoor', f), tight_placement: tightPlacement(toPreCheck(p).outdoorSpot), note: "Rough hint only; the caller's own answers win. A technician confirms placement and noise rules (TA Lärm; compliance is the customer's responsibility, AGB 7.7)." };
+        }
+        if (ph.kind === 'boiler_room' || ph.kind === 'access') {
+          const f = ph.kind === 'boiler_room' ? await boilerRoomFromPhotos(pathsOf('boiler_room')) : await accessFromPhotos(pathsOf('access'));
+          ph.finding = f;
+          return { kind: ph.kind, finding: f, sentence: photoFindingSentence(ph.kind, f), note: 'For the technician only; it never changes the result.' };
         }
         if (ph.kind === 'bill') {
           const f = await billFromDocument(ph.path);
           ph.finding = f;
-          return { kind: 'bill', proposed: f, note: 'Read these values back and store them with update_profile (provenance bill_ai) only after the caller confirms.' };
+          return { kind: 'bill', proposed: f, sentence: photoFindingSentence('bill', f), note: 'Read these values back and store them with update_profile (provenance bill_ai) only after the caller confirms.' };
+        }
+        if (ph.kind === 'certificate') {
+          const f = await certificateFromDocument(ph.path);
+          ph.finding = f;
+          return { kind: 'certificate', proposed: f, sentence: photoFindingSentence('certificate', f), note: 'Read the value back and store it with update_profile (slot certificate_kwh_m2a, provenance certificate) only after the caller confirms. It is a cross-check against the bill, never a replacement.' };
         }
         return { kind: ph.kind, note: 'Stored for the technician; no automatic analysis for this kind.' };
       } catch (e) {

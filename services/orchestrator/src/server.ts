@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assess } from '@hpr/core/engine/assess';
 import { resultAreas } from '@hpr/core/engine/areas';
+import { mergeOutdoorFinding, type OutdoorFinding } from '@hpr/core/ai/classifyOutdoorPhoto';
 import { mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
 import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
@@ -90,6 +91,8 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
         if (done && target) target.finding = done.finding;
         if (kind === 'radiator' && work.profile.pipePhoto) fresh.profile.pipePhoto = work.profile.pipePhoto;
         if (kind === 'meter_cabinet' && work.profile.meterCabinet) fresh.profile.meterCabinet = work.profile.meterCabinet;
+        // Re-merge into the latest answers so anything the caller said meanwhile still wins over the photo.
+        if (kind === 'outdoor' && done?.finding) fresh.profile.outdoor = mergeOutdoorFinding(fresh.profile.outdoor, done.finding as OutdoorFinding);
         fresh.toolLog.push(...work.toolLog.slice(-1));
         store.save(fresh);
       }).catch(() => undefined);
