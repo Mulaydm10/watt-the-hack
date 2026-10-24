@@ -150,6 +150,15 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       if (!r) return json(res, 404, { error: 'unknown lead' });
       json(res, 200, r);
     }],
+    // Photo file for a dashboard thumbnail. Same sales token as the other lead routes: fetch it with the
+    // Authorization header and show it via a blob URL, so the token never goes into a URL.
+    ['GET', /^\/leads\/([\w-]+)\/photos\/([\w-]+)$/, async (req, res, [lead, pid]) => {
+      if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
+      const p = store.list().find((x) => x.leadId === lead)?.profile.photos.find((x) => x.id === pid);
+      if (!p || !existsSync(p.path)) return json(res, 404, { error: 'not found' });
+      const type = /\.pdf$/i.test(p.path) ? 'application/pdf' : /\.png$/i.test(p.path) ? 'image/png' : 'image/jpeg';
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'private, no-store', 'access-control-allow-origin': '*' }).end(readFileSync(p.path));
+    }],
     ['PATCH', /^\/leads\/([\w-]+)$/, async (req, res, [lead]) => {
       if (!salesOk(req)) return json(res, 401, { error: 'sales token required' });
       const st = leads.update(lead, await readJson(req));

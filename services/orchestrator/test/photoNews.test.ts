@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { newSession, type ChatMessage, type Session } from '@hpr/agent';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { MemoryStore, newSession, type ChatMessage, type Session } from '@hpr/agent';
 import { handleTurn } from '../src/agent';
 import type { ModelClient } from '../src/model';
+import { buildServer } from '../src/server';
 
 const config = { reportsDir: '.', publicBaseUrl: 'http://localhost' };
 
@@ -55,5 +60,36 @@ describe('photo results that arrive in the background', () => {
     const { model, prompts } = fakeModel('Thanks, I have your certificate.');
     await handleTurn(s, 'done', model, config);
     expect(prompts[0]).toMatch(/only after a clear yes/);
+  });
+});
+
+describe('dashboard photo route', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'orch-photo-'));
+  const store = new MemoryStore();
+  const server = buildServer(store, { reportsDir: join(dir, 'reports'), publicBaseUrl: 'http://localhost' }, fakeModel('ok').model);
+  let base = '';
+  const before = process.env.SALES_TOKEN;
+  beforeAll(async () => {
+    process.env.SALES_TOKEN = 'test-token';
+    const path = join(dir, 'p1.jpg');
+    writeFileSync(path, new Uint8Array([255, 216, 255, 1]));
+    const s = newSession('route-1', 'chat', 'en');
+    s.leadId = 'L-TEST-0001';
+    s.profile.photos.push({ id: 'p1', kind: 'outdoor', path, at: new Date().toISOString() });
+    store.save(s);
+    await new Promise<void>((r) => server.listen(0, r));
+    base = `http://localhost:${(server.address() as AddressInfo).port}`;
+  });
+  afterAll(() => { server.close(); if (before == null) delete process.env.SALES_TOKEN; else process.env.SALES_TOKEN = before; });
+
+  it('needs the sales token, returns the file with it, and 404s for unknown photos', async () => {
+    expect((await fetch(`${base}/leads/L-TEST-0001/photos/p1`)).status).toBe(401);
+    const auth = { headers: { authorization: 'Bearer test-token' } };
+    const ok = await fetch(`${base}/leads/L-TEST-0001/photos/p1`, auth);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('content-type')).toBe('image/jpeg');
+    expect(new Uint8Array(await ok.arrayBuffer())).toEqual(new Uint8Array([255, 216, 255, 1]));
+    expect((await fetch(`${base}/leads/L-TEST-0001/photos/nope`, auth)).status).toBe(404);
+    expect((await fetch(`${base}/leads/L-OTHER/photos/p1`, auth)).status).toBe(404);
   });
 });
