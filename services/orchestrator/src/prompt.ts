@@ -42,6 +42,9 @@ ${voice
 }
 
 export function greeting(s: Session): string {
+  if (s.channel === 'voice' && !s.profile.slots.lang) {
+    return 'Guten Tag, hier ist der Assistent von nuuEnergy. Hello, this is nuuEnergy\'s assistant. Sie können Deutsch oder Englisch mit mir sprechen, you can speak German or English. In etwa 5 bis 10 Minuten prüfen wir kostenlos und unverbindlich, ob eine Wärmepumpe zu Ihrem Haus passt. nuuEnergy fragt nie nach Bankdaten oder Passwörtern. Sollen wir anfangen? Shall we start?';
+  }
   return s.lang === 'de'
     ? 'Guten Tag, hier ist der Assistent von nuuEnergy. Ich helfe Ihnen in etwa 5 bis 10 Minuten herauszufinden, ob eine Wärmepumpe zu Ihrem Haus passen könnte. Das ist kostenlos und unverbindlich, und gern darf jemand aus der Familie helfen. nuuEnergy fragt Sie nie nach Bankdaten oder Passwörtern. Sollen wir anfangen?'
     : "Hello, this is nuuEnergy's assistant. In about 5 to 10 minutes I can help you find out whether a heat pump could suit your home. It's free and without obligation, and a family member is welcome to help. nuuEnergy will never ask you for bank details or passwords. Shall we start?";

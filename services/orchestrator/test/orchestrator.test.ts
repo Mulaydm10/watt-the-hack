@@ -58,7 +58,10 @@ const B04_LINES = ['yes', 'en', '85221', 'semi', '1987', '160', 'oil', '2500 lit
 describe('orchestrator loop (rule model, no LLM)', () => {
   it('greets with the free / no-obligation / no-bank-details promise', async () => {
     const { replies } = await talk([]);
-    expect(replies[0]).toMatch(/free and without obligation.*never ask you for bank details/s);
+    // Voice opens bilingually so the caller can answer in either language.
+    expect(replies[0]).toMatch(/kostenlos und unverbindlich.*nie nach Bankdaten.*Shall we start/s);
+    const chat = newSession('c', 'chat', 'en');
+    expect(startConversation(chat)).toMatch(/free and without obligation.*never ask you for bank details/s);
   });
   it('B-04 by voice: one question per turn, yellow result, report sent', async () => {
     const { s, replies } = await talk(B04_LINES);
@@ -141,5 +144,27 @@ describe('ElevenLabs custom-LLM bridge', () => {
   it('non-streaming mode returns a normal completion', async () => {
     const j = await (await turn('85221', false)).json();
     expect(j.choices[0].message.content).toMatch(/kind of home/);
+  });
+});
+
+describe('dynamic language', () => {
+  it('detects German and English, ignores weak signals', async () => {
+    const { detectLanguage } = await import('../src/language');
+    expect(detectLanguage('Ja, ich habe eine Ölheizung im Haus')).toBe('de');
+    expect(detectLanguage('Yes, we have oil heating in the house')).toBe('en');
+    expect(detectLanguage('ok')).toBeNull();
+    expect(detectLanguage('85221')).toBeNull();
+    expect(detectLanguage('Können wir auf Deutsch weitermachen?')).toBe('de');
+  });
+  it('switches the session mid-call and back', async () => {
+    const s = newSession('lang', 'voice', 'en');
+    const model = new RuleModel();
+    const greet = startConversation(s);
+    expect(greet).toMatch(/Deutsch oder Englisch.*German or English/s);
+    await handleTurn(s, 'Ja, gerne, wir können anfangen', model, config);
+    expect(s.lang).toBe('de');
+    const r = await handleTurn(s, 'Sorry, can we speak English please, I know it better', model, config);
+    expect(s.lang).toBe('en');
+    expect(r.reply).toMatch(/[A-Za-z]/);
   });
 });

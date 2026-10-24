@@ -1,6 +1,7 @@
 // One conversation turn: caller text in → tool calls (as many as the model needs) → guarded reply out.
 import { deriveState, progress, runTool, TOOLS, type ChatMessage, type Session, type ToolConfig } from '@hpr/agent';
 import { guardReply } from './guard';
+import { followLanguage } from './language';
 import type { ModelClient } from './model';
 import { greeting, systemPrompt, type TurnContext } from './prompt';
 
@@ -29,6 +30,8 @@ export function startConversation(s: Session): string {
 
 export async function handleTurn(s: Session, userText: string, model: ModelClient, config: ToolConfig): Promise<TurnResult> {
   s.messages.push({ role: 'user', content: userText });
+  // Answer in the caller's language, whatever the session started with.
+  if (followLanguage(s, userText)) s.messages.push({ role: 'system', content: `The caller is speaking ${s.lang === 'de' ? 'German' : 'English'}: continue in ${s.lang === 'de' ? 'German' : 'English'}.` });
   const ctx = { session: s, config };
   const toolsCalled: string[] = [];
   let retried = false;

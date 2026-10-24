@@ -21,8 +21,8 @@ export function conversationId(body: OaiRequest): string | null {
 
 export function detectLang(body: OaiRequest): 'de' | 'en' {
   const sys = body.messages.filter((m) => m.role === 'system').map(textOf).join('\n');
-  const m = sys.match(/language:\s*(de|en)/i);
-  return (m?.[1].toLowerCase() as 'de' | 'en') ?? 'de';
+  const m = sys.match(/language:\s*(de|en)\b/i);
+  return (m?.[1].toLowerCase() as 'de' | 'en') ?? 'de'; // "auto" → start German, follow the caller
 }
 
 function sseChunk(res: ServerResponse, id: string, model: string, delta: Record<string, unknown>, finish: string | null = null) {
@@ -64,5 +64,5 @@ export async function handleChatCompletions(req: IncomingMessage, res: ServerRes
 
 /** Prompt text to paste into (or create with) the ElevenLabs agent. Rules live in our orchestrator, not here. */
 export const ELEVENLABS_AGENT_PROMPT = `conversation_id: {{system__conversation_id}}
-language: de
+language: auto
 You are a voice front end. All answers come from the custom LLM; do not add content.`;
