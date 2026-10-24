@@ -30,11 +30,12 @@ async function loadExamples() {
   return examplesCache;
 }
 
-export async function classifyPipePhotos(files: File[], constructionYear: number | null): Promise<PhotoFindings> {
+/** `excludeExample` drops one few-shot example (used for honest leave-one-out evaluation). */
+export async function classifyPipePhotos(files: File[], constructionYear: number | null, excludeExample?: string): Promise<PhotoFindings> {
   const ex = await loadExamples();
   const content = [
     text('Installer-confirmed examples:'),
-    ...EXAMPLES.flatMap((e, i) => [image(ex[i]), text(`Example ${i + 1}: ${e.label} because ${e.why}.`)]),
+    ...EXAMPLES.flatMap((e, i) => e.file === excludeExample ? [] : [image(ex[i]), text(`Example ${i + 1}: ${e.label} because ${e.why}.`)]),
     text(`Now the homeowner's photos (building year: ${constructionYear ?? 'unknown'}):`),
     ...(await Promise.all(files.slice(0, 5).map(fileToImage))).map(image),
   ];
