@@ -1,0 +1,21 @@
+{
+  "name": "@hpr/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Transport-free agent domain: slots, profile, next-question logic, state machine, tools, outcomes, sales report.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@hpr/core": "0.1.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

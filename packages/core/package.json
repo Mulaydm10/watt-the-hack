@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Deterministic heat-pump readiness engine, sales layer and AI helpers shared by the web app, MCP tools and agent.",
   "exports": {
+    "./data/*": "./src/data/*",
+    "./assets/*": "./assets/*",
     "./*": "./src/*.ts"
   },
   "scripts": {
