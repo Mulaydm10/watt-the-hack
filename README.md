@@ -15,6 +15,7 @@ for more info), so fewer technician visits fail on site. Missing data never make
 | [`PROBLEM_AND_APPROACH.md`](PROBLEM_AND_APPROACH.md) | The problem, what the organisers told us on site, the approach so far, open questions |
 | [`docs/REFINED_APPROACH.md`](docs/REFINED_APPROACH.md) | The plan for the last hours: concept, ranked build list with lanes, 3-minute demo script, risks, data-source tests (incl. ETHOS.BUILDA) |
 | [`app/README.md`](app/README.md) | How the engine and the app work, assumptions and limits, the sales side |
+| [`docs/REFERENCES.md`](docs/REFERENCES.md) | The 13 sources behind the parameters and rules, mapped rule by rule |
 
 ## Live system (demo)
 
@@ -91,6 +92,19 @@ All numbers come from the deterministic engine and the challenge's fixed guardra
 
 See [`GOVERNANCE.md`](GOVERNANCE.md). In short: the owner (Mulaydm10) decides scope and pitch; `notes/workflow.md` is
 append-only; never commit secrets, `.env` files, API keys or raw datasets; small commits straight to `main`.
+
+## Sources behind the rules
+
+The parameters and rules are backed by public sources, mapped rule by rule in [`docs/REFERENCES.md`](docs/REFERENCES.md):
+- **Building age never rules a home out:** Fraunhofer ISE measured 77 heat pumps in existing homes and found no
+  correlation between construction year and efficiency (SPF 2.6–5.4); adequately sized radiators run almost as low as
+  underfloor heating.
+- **~55 °C is a screening reference, not pass/fail:** Verbraucherzentrale's rule of thumb (flow temperature below 55 °C
+  most of the year); insulation, large heating surfaces and hydraulic balancing matter.
+- **The exact heat load is checked room by room on site:** Umweltbundesamt Gebäudecheck and nuuEnergy's own process.
+- **Questions and photo tasks** follow real installer intake (Enpal, Aira, thermondo, incl. thermondo's photo guide).
+- **Address and age data are estimates to confirm:** ETHOS.BUILDA (ODbL), TABULA/EPISCOPE, Census 2022.
+- **All formulas and prices** come from nuuEnergy's Technical Guardrails.
 
 ## Data and credits
 
