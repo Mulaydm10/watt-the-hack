@@ -1,6 +1,34 @@
 // Session store: SQLite (node:sqlite, no native deps) for the service, in-memory for tests.
 import { DatabaseSync } from 'node:sqlite';
+import { mergeOutdoorFinding, type OutdoorFinding } from '@hpr/core/ai/classifyOutdoorPhoto';
 import type { Session } from './session';
+
+/**
+ * Save a session that was loaded before a long await (a conversation turn takes seconds). Stores return copies,
+ * so a plain save would overwrite photos uploaded meanwhile and photo results merged by the background analysis.
+ * This keeps them: new photo records are added, newly arrived findings are copied, and the derived values they
+ * set (pipe photo, meter cabinet, outdoor hint) are taken over. Outdoor hints are re-merged so anything the caller
+ * said during the turn still wins.
+ */
+export function saveKeepingPhotos(store: SessionStore, s: Session): void {
+  const latest = store.get(s.id);
+  if (latest) {
+    const arrived = new Set<string>();
+    for (const lp of latest.profile.photos) {
+      const mine = s.profile.photos.find((p) => p.id === lp.id);
+      if (!mine) { s.profile.photos.push(lp); if (lp.finding != null) arrived.add(lp.kind); }
+      else if (mine.finding == null && lp.finding != null) { mine.finding = lp.finding; arrived.add(lp.kind); }
+    }
+    if (arrived.has('radiator') && latest.profile.pipePhoto) s.profile.pipePhoto = latest.profile.pipePhoto;
+    if (arrived.has('meter_cabinet') && latest.profile.meterCabinet) s.profile.meterCabinet = latest.profile.meterCabinet;
+    if (arrived.has('outdoor')) {
+      for (const p of s.profile.photos) {
+        if (p.kind === 'outdoor' && p.finding != null) s.profile.outdoor = mergeOutdoorFinding(s.profile.outdoor, p.finding as OutdoorFinding);
+      }
+    }
+  }
+  store.save(s);
+}
 
 export interface SessionStore {
   get(id: string): Session | undefined;

@@ -9,7 +9,7 @@
 // Language: when the caller switches language, we also call ElevenLabs' built-in `language_detection` tool so its
 // speech recognition and voice switch too.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { newSession, type Session, type SessionStore, type ToolConfig } from '@hpr/agent';
+import { newSession, saveKeepingPhotos, type Session, type SessionStore, type ToolConfig } from '@hpr/agent';
 import { handleTurn, startConversation } from './agent';
 import type { ModelClient } from './model';
 
@@ -70,7 +70,7 @@ export async function handleChatCompletions(_req: IncomingMessage, res: ServerRe
   const canSwitch = body.tools?.some((t) => t.function?.name === 'language_detection');
   const turn = (async () => {
     const reply = userText ? (await handleTurn(session, userText, model, config)).reply : '';
-    store.save(session);
+    saveKeepingPhotos(store, session); // keeps photos uploaded during the turn (e.g. via the link mid-call)
     const after = session.speak ?? session.lang;
     return { reply, switchTo: canSwitch && after !== before ? after : null };
   })();

@@ -17,7 +17,7 @@ vi.mock('../src/photoAi', () => ({
   certificateFromDocument: vi.fn(async () => ({ kwh_m2a: 143, kind: 'demand', issued: null, valid_until: null, evidence: [] })),
 }));
 
-const { newSession, runTool, toPreCheck } = await import('../src');
+const { MemoryStore, newSession, runTool, saveKeepingPhotos, toPreCheck } = await import('../src');
 
 const ctxFor = () => {
   const s = newSession('photo-' + Math.random().toString(36).slice(2, 8), 'chat', 'en');
@@ -67,5 +67,61 @@ describe('analyse_photo: new kinds', () => {
     const r = (await runTool(c, 'analyse_photo', { photo_id: addPhoto(c, 'meter_cabinet') })) as { sentence: string };
     expect(c.session.profile.meterCabinet).toBe('old-or-full');
     expect(r.sentence).toMatch(/electrician confirms/);
+  });
+});
+
+describe('saving after a long turn keeps what arrived meanwhile', () => {
+  const at = new Date().toISOString();
+  const setup = () => {
+    const store = new MemoryStore();
+    const s = newSession('race-' + Math.random().toString(36).slice(2, 8), 'voice', 'en');
+    store.save(s);
+    return { store, id: s.id };
+  };
+
+  it('a photo uploaded during the turn is not lost', () => {
+    const { store, id } = setup();
+    const turn = store.get(id)!; // the turn loads its copy, then waits for the model
+    const upload = store.get(id)!;
+    upload.profile.photos.push({ id: 'u1', kind: 'meter_cabinet', path: '/tmp/u1.jpg', at });
+    store.save(upload);
+    turn.messages.push({ role: 'user', content: 'hello' });
+    saveKeepingPhotos(store, turn);
+    const saved = store.get(id)!;
+    expect(saved.profile.photos.map((p) => p.id)).toEqual(['u1']);
+    expect(saved.messages.at(-1)).toMatchObject({ content: 'hello' });
+  });
+
+  it("a result that lands meanwhile is kept, and the caller's outdoor answer from the turn still wins", () => {
+    const { store, id } = setup();
+    const first = store.get(id)!;
+    first.profile.photos.push({ id: 'o1', kind: 'outdoor', path: '/tmp/o1.jpg', at });
+    store.save(first);
+    const turn = store.get(id)!;
+    turn.profile.outdoor = { space1x1: 'yes', neighbourOk: 'yes' }; // the caller answered during the turn
+    const background = store.get(id)!;
+    const finding = { space_1x1: 'no', near_neighbour: 'yes', house_type: 'semi', access: 'ok', obstacles: [], evidence: [], confidence: 0.9, agreement: 1, looks: 3, source: 'ai' };
+    background.profile.photos[0].finding = finding;
+    background.profile.outdoor = { space1x1: 'no', neighbourOk: 'no' };
+    store.save(background);
+    saveKeepingPhotos(store, turn);
+    const saved = store.get(id)!;
+    expect(saved.profile.photos[0].finding).toEqual(finding);
+    expect(saved.profile.outdoor).toEqual({ space1x1: 'yes', neighbourOk: 'yes' });
+  });
+
+  it('a radiator result that lands meanwhile sets the pipe photo', () => {
+    const { store, id } = setup();
+    const first = store.get(id)!;
+    first.profile.photos.push({ id: 'r1', kind: 'radiator', path: '/tmp/r1.jpg', at });
+    store.save(first);
+    const turn = store.get(id)!;
+    const background = store.get(id)!;
+    const pipe = { label: 'two-pipe' as const, confidence: 0.9, evidence: [], source: 'ai' as const };
+    background.profile.photos[0].finding = pipe;
+    background.profile.pipePhoto = pipe;
+    store.save(background);
+    saveKeepingPhotos(store, turn);
+    expect(store.get(id)!.profile.pipePhoto).toEqual(pipe);
   });
 });

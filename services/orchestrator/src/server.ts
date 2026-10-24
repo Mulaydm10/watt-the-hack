@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { assess } from '@hpr/core/engine/assess';
 import { resultAreas } from '@hpr/core/engine/areas';
 import { mergeOutdoorFinding, type OutdoorFinding } from '@hpr/core/ai/classifyOutdoorPhoto';
-import { buildReport, deliverReport, mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
+import { buildReport, deliverReport, mergeOutcomeConfig, newSession, saveKeepingPhotos, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
 import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
 import { handleChatCompletions } from './elevenlabs';
@@ -101,9 +101,9 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       const { text } = await readJson(req);
       if (typeof text !== 'string' || !text.trim()) return json(res, 400, { error: 'text required' });
       const r = await handleTurn(s, text.slice(0, 2000), model, config);
-      store.save(s);
+      saveKeepingPhotos(store, s); // a turn takes seconds: keep photos and results that arrived meanwhile
       const nq = (await runTool({ session: s, config }, 'get_state', {})) as { next_question: { options?: { value: string; label: string }[] } | null };
-      store.save(s);
+      saveKeepingPhotos(store, s);
       json(res, 200, { messages: [r.reply], state: r.state, progress: r.progress, suggested_answers: [...(nq.next_question?.options?.map((o) => o.label) ?? []), s.lang === 'de' ? 'Weiß nicht' : "I don't know"], guard: r.guard });
     }],
     ['POST', /^\/sessions\/([\w-]+)\/photos$/, async (req, res, [id], url) => {
