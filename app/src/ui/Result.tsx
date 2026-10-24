@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { explainPlainly } from '../ai/explain';
+import { hasLlmKey, providerName } from '../ai/provider';
 import { ASSUMPTIONS } from '../engine/constants';
 import type { Assessment, Building, Flag } from '../engine/types';
 
@@ -33,6 +35,33 @@ function FlagList({ items, empty, tone }: { items: Flag[]; empty: string; tone: 
   );
 }
 
+function PlainLanguage({ a }: { a: Assessment }) {
+  const [state, setState] = useState<{ status: 'idle' | 'loading' | 'done' | 'error'; text: string }>({ status: 'idle', text: '' });
+  const run = async () => {
+    setState({ status: 'loading', text: '' });
+    try { setState({ status: 'done', text: await explainPlainly(a) }); }
+    catch (e) { setState({ status: 'error', text: (e as Error).message }); }
+  };
+  return (
+    <Card title="In plain words">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <p className="mb-1 text-xs font-semibold text-slate-400">AI rephrasing ({providerName()}) · no new numbers allowed</p>
+          {!hasLlmKey() && <p className="text-sm text-slate-400">AI helper is off (no key). The engine's reasons on the right are the full answer.</p>}
+          {hasLlmKey() && state.status === 'idle' && <button onClick={run} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Explain in plain words</button>}
+          {state.status === 'loading' && <p className="text-sm text-slate-500">Writing…</p>}
+          {state.status === 'done' && <p className="text-slate-800">{state.text}</p>}
+          {state.status === 'error' && <p className="text-sm text-amber-700">Not shown: {state.text}. The engine's reasons on the right stay authoritative.</p>}
+        </div>
+        <div>
+          <p className="mb-1 text-xs font-semibold text-slate-400">Engine reasons (deterministic, source of truth)</p>
+          <ul className="list-disc pl-5 text-sm text-slate-700">{a.verdictReasons.map((r) => <li key={r}>{r}</li>)}</ul>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: () => void }) {
   const [maths, setMaths] = useState(false);
   const L = LIGHT[a.verdict];
@@ -58,6 +87,8 @@ export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: (
           {b.building_id && <p className="mt-2 text-xs text-slate-400">{b.building_id} · {b.location}</p>}
         </div>
       </section>
+
+      <PlainLanguage key={b.building_id ?? 'custom'} a={a} />
 
       <div className="grid gap-5 md:grid-cols-2">
         <Card title="Heat load">
