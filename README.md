@@ -1,130 +1,220 @@
-# Heat Pump Ready? (nuuEnergy challenge, WATT THE HACK Munich)
+<div align="center">
 
-Munich Climate Week, 24 Oct 2026, 09:00–19:00 CEST, Audimax München. One-day build.
-Challenge: nuuEnergy's "Heat Pump Ready?" (track: Buildings & Everyday Energy). Submission 18:00, live demo for the jury.
+<a href="https://youtu.be/8AJnO8cEilY"><img src="docs/media/banner.png" alt="Heat Pump Ready? Heat pump in your home? Just call." width="100%"></a>
 
-**What it does.** A browser tool that gives a homeowner an honest first answer to "would a heat pump work in my home?":
-green / yellow / red with a reason they understand, what the tool can't tell yet, what a technician must check on site,
-and the yearly running cost. nuuEnergy's sales team sees the same result as a visit decision (call first, visit, or ask
-for more info), so fewer technician visits fail on site. Missing data never makes a house red.
+# Heat Pump Ready?
 
-## Start here
+### Would a heat pump work in your home? **Just call.**
 
-| Read | For |
-|---|---|
-| [`PROBLEM_AND_APPROACH.md`](PROBLEM_AND_APPROACH.md) | The problem, what the organisers told us on site, the approach so far, open questions |
-| [`docs/REFINED_APPROACH.md`](docs/REFINED_APPROACH.md) | The plan for the last hours: concept, ranked build list with lanes, 3-minute demo script, risks, data-source tests (incl. ETHOS.BUILDA) |
-| [`app/README.md`](app/README.md) | How the engine and the app work, assumptions and limits, the sales side |
-| [`docs/REFERENCES.md`](docs/REFERENCES.md) | The 13 sources behind the parameters and rules, mapped rule by rule |
+An AI voice agent that gives homeowners an honest heat-pump answer in one phone call,<br>
+and tells nuuEnergy's sales team which expert visits are worth driving out for.
 
-## Live system (demo)
+[![Watch the demo](https://img.shields.io/badge/▶_Watch_the_demo-2:56-F2A84A?style=for-the-badge&labelColor=1C1510)](https://youtu.be/8AJnO8cEilY)
+[![Pitch deck](https://img.shields.io/badge/Pitch_deck-PDF-F7C77F?style=for-the-badge&labelColor=1C1510)](submissions/pitch/NoIdea_HeatPumpReady_Pitch.pdf)
+[![WATT THE HACK](https://img.shields.io/badge/WATT_THE_HACK-Munich_2026-6FD49B?style=for-the-badge&labelColor=1C1510)](#team)
 
-| What | Where | Notes |
+![Tests](https://img.shields.io/badge/tests-155_passing-6FD49B?labelColor=271E17)
+![Tools](https://img.shields.io/badge/agent_tools-27-F2A84A?labelColor=271E17)
+![Languages](https://img.shields.io/badge/voice-8_languages-F2A84A?labelColor=271E17)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)
+![ElevenLabs](https://img.shields.io/badge/ElevenLabs-voice-000000)
+![MCP](https://img.shields.io/badge/MCP-server-8C7A66)
+
+**nuuEnergy challenge · Buildings & Everyday Energy · built in one day by Team NoIdea**
+
+</div>
+
+---
+
+## 🔥 The problem
+
+Today a homeowner only finds out whether a heat pump suits their house after an expert drives out for a **two-hour
+on-site visit**. That's slow for the homeowner and expensive for the installer, especially for visits that end in "not yet".
+
+## 💡 Our answer
+
+**Pick up the phone.** A patient voice agent asks one question at a time, in plain language, in any of 8 European
+languages, and gives an **honest traffic light** in minutes:
+
+| | Verdict | Means |
 |---|---|---|
-| Voice agent (ElevenLabs) | https://elevenlabs.io/app/talk-to?agent_id=agent_3601m5q14gwxf6ya187pqkh79t9z | Female voice (Sarah), opens in German and English, follows the caller in de/en/fr/it/es/nl/pl/pt; one question at a time; all numbers and the verdict come from the engine through tools |
-| Sales: live leads | web app → **Live leads** (`/#/live`), e.g. http://100.80.210.100:5173/#/live | Real leads from the voice agent and chat: traffic light, next step (A–D) with reasons, the four result areas, contact (only with consent), what was promised, status + notes, printable briefing. Sign in with the sales token (`SALES_TOKEN` in `services/.env` on the Mac) |
-| Assistant API | https://dhruvs-mac-mini.tailaf7ebe.ts.net (public, Tailscale Funnel), `http://100.80.210.100:8787` (tailnet) | Homeowner endpoints for the phone app; contract in [`docs/APP_CLAUDE_PROMPT.md`](docs/APP_CLAUDE_PROMPT.md). Lead endpoints need the sales token |
-| MCP tools | `http://100.80.210.100:8788/mcp` | The same tools for any MCP client |
+| 🟢 | **Green** | Looks suitable: book the expert visit |
+| 🟡 | **Yellow** | Possible, but a technician checks something first (never a hidden "no") |
+| 🔴 | **Red** | Major obstacles right now, and what would change that |
 
-How a call flows: caller → ElevenLabs (speech, voice) → our orchestrator as its custom LLM (Astra `gpt-6-astra` +
-tools + a guard that blocks invented numbers or a changed verdict) → result and dated callback promise to the caller →
-with consent, a sales report (JSON + summary) that appears in **Live leads**. Three demo leads (B-02, B-04, B-05 as
-Peter, Helga and Anna, marked "demo") are seeded with `npx tsx services/orchestrator/scripts/seed-demo-leads.mts`.
-The public Funnel address is for the demo only: turn it off afterwards with `tailscale funnel --https=443 off` on the Mac.
+Every answer explains itself (heat demand, heating-system fit, installation feasibility, information confidence),
+shows yearly running costs vs. today's oil or gas, and a **path to green**.
 
-## Run it
+<div align="center">
+<img src="docs/media/home.png" alt="Landing page with a thermal pre-scan of an example house" width="49%">
+<img src="docs/media/result.png" alt="Result page: a glowing yellow verdict, 9.5 kW, 2,043 euros versus 4,250 euros a year" width="49%">
+</div>
 
-```bash
-npm install
-npm run dev -w app
+## 🧠 AI talks. Rules decide.
+
+The language model never calculates. It phrases the questions and the explanation; **every number and every verdict
+comes from a deterministic engine** built on nuuEnergy's technical guardrails, and a guard rejects any reply that
+contains a number the engine didn't produce or changes the verdict.
+
+```mermaid
+flowchart LR
+    H["📞 Homeowner<br/>voice · Android app · web"] --> O["🤖 Orchestrator<br/>Astra + guard"]
+    O -- "27 tools (also over MCP)" --> E["⚙️ Deterministic engine<br/>heat load · verdict · costs"]
+    E --> R["🟡 Result + path to green"]
+    R -- "only with consent" --> S["📍 Live leads<br/>tier A–D · map · briefing"]
+    S --> M["👷 Heating master<br/>one-page briefing"]
 ```
 
-The app opens at http://localhost:5173. It works without an API key. For the AI helpers (radiator-photo check, bill
-reader, plain-language summary), copy `app/.env.example` to `app/.env` and set a key. Never commit `.env`.
-The assistant backend (orchestrator, MCP server) runs separately: see [`services/README.md`](services/README.md).
+### Calibrated on nuuEnergy's reference houses
 
-```bash
-npm test
-npm run build
-```
+| House | Our estimate | nuuEnergy reference | Verdict (expected) |
+|---|---|---|---|
+| B-01 | 9.8 kW | 9.6 kW (+2%) | 🟢 green (green) |
+| B-02 | 9.9 kW | 9.7 kW (+2%) | 🟢 green (green) |
+| B-03 | 16.6 kW | 14.5 kW (+14%) | 🟡 yellow (yellow) |
+| B-04 *(hidden by the jury)* | 9.5 kW | – | 🟡 yellow: confirmed single-pipe heating, a technician checks |
+| B-05 *(hidden by the jury)* | 10.4 kW | – | 🟡 yellow: the data contradicts itself (216 kWh/m² for a 2006 house) |
 
-Known issues (24 Oct, 15:00):
-- `package-lock.json` only has the Mac native binaries. On Windows or Linux, if the build fails with
-  "Cannot find module ../lightningcss.<platform>.node", delete `node_modules` and `package-lock.json`, run
-  `npm install` again, and don't commit the regenerated lockfile.
-- `npm test` ends with an error from the `app` workspace ("No test files found"): its tests moved to `packages/core`.
-  At commit `7b8fb4c` all real tests pass: 80 in `packages/core`, 21 in `packages/agent`, 3 in `services/mcp-tools`,
-  17 in `services/orchestrator` (live-AI tests skipped without a key). Live persona runs with Astra: B-04 yellow
-  9.5 kW and B-02 green 9.9 kW, 0 guard fallbacks, about 6.8 s per turn.
+Three of three verdicts match. We claim no accuracy beyond these 3 labelled houses.
 
-## Results for the 5 buildings
+## ✨ Features
 
-Engine output at commit `cd3d1b3`. The 3 dev buildings come with nuuEnergy's reference values; the jury keeps the
-references for B-04 and B-05 hidden.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-| Building | Verdict (confidence) | Best estimate | Reference | Main reason |
-|---|---|---|---|---|
-| B-01 | green (low) | 9.8 kW | 9.6 kW, green | Moderate load; radiators likely fine at ≤ 55 °C; the bill looks too low |
-| B-02 | green (high) | 9.9 kW | 9.7 kW, green | Moderate load; underfloor heating suits a heat pump |
-| B-03 | yellow (high) | 16.6 kW | 14.5 kW, yellow | Radiators probably need 55–60 °C; 83 W/m² is on the high side |
-| B-04 | yellow (medium) | 9.5 kW | hidden | Known obstacle: single-pipe heating system, a technician must check it |
-| B-05 | yellow (low) | 10.4 kW | hidden | The data contradicts itself: consumption far too high for a 2006 house, 14 rooms in 125 m² |
+### 📞 A voice for older homeowners
+ElevenLabs voice (Sarah) on our orchestrator as a custom LLM. Calm pace, numbers read back, "I don't know" is
+always fine, a human on request, and every call opens with *"nuuEnergy never asks for bank details or passwords."*
+Follows the caller in **German, English, French, Italian, Spanish, Dutch, Polish and Portuguese**.
 
-All numbers come from the deterministic engine and the challenge's fixed guardrail values. AI never changes a verdict.
+</td>
+<td width="50%" valign="top">
 
-## Tech stack
+### 📸 Photo AI & bill reader
+Radiator, meter-cabinet and outdoor-spot photos via an SMS upload link; three independent looks vote, and below 70%
+the answer is "a technician checks". Reads yearly gas or oil use from a bill photo or PDF; the caller confirms.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 📍 Live leads for the sales desk
+*"Who do we call first?"* Every consented lead lands live, ranked into nuuEnergy's own funnel:
+**A** book the on-site visit · **B** 30-minute call · **C** ask for info · **D** not now.
+Expected value = P(sale) × margin − visit cost, all inputs set by nuuEnergy.
+
+</td>
+<td valign="top">
+
+### 🔒 Fair and private
+Never asks age, income, health, nationality or bank details. Ranking uses building facts and the homeowner's own
+answers only. Exact address on the map **only with consent**, otherwise the postcode area. Lead data sits behind a
+sales token.
+
+</td>
+</tr>
+</table>
+
+<div align="center">
+<img src="docs/media/live-map.png" alt="Live leads dashboard: pipeline value and a dark map flown to street level at a lead's address" width="100%">
+<br>
+<img src="docs/media/live-drawer.png" alt="Lead briefing for the heating master with thermal pre-scan, verdict, next step and promises made" width="49%">
+<img src="docs/media/live-detail.png" alt="Lead briefing: customer facts with sources and a radiator photo with its finding" width="49%">
+</div>
+
+## 🛠 The agent's toolbox
+
+27 tools in total (housekeeping included), served to the orchestrator and over MCP. The ones that matter:
+
+| Group | Tool | Does |
+|---|---|---|
+| Conversation | `get_next_questions` | Only the questions that would change the result |
+| | `update_profile` | Stores each answer with its source (caller, bill, photo) |
+| | `confirm_details` | Read-back before any result |
+| Engine | `assess_building` | Verdict, heat load (two methods), flags |
+| | `path_to_green` | Which checks would turn yellow into green |
+| | `estimate_costs` | Running costs, price band, subsidy |
+| Photo AI | `request_photo_link` · `analyse_photo` | Upload link; radiators, meter cabinet, outdoor spot |
+| Explanation | `explain_result` | Plain language, guarded: no new numbers, same verdict |
+| Sales | `lookup_location` · `visit_decision` · `finish_session` | Service area, tier A–D, lead (only with consent) |
+
+## 📊 What we measured
+
+| Check | Result |
+|---|---|
+| Engine vs. reference houses | 3 / 3 verdicts, heat load within +2% / +2% / +14% |
+| Live voice test calls (simulated older homeowners, B-02 and B-04) | 2 / 2 correct verdict and heat load, guard never had to step in |
+| Radiator photos (installer-labelled, leave-one-out) | 4 / 5 right, 0 confidently wrong |
+| Real meter-cabinet / outdoor photos | 2 / 4 exact, 0 confidently wrong |
+| Real gas bill (SWM sample) | 12,945 kWh and €765.02 read correctly |
+| Plain-language summaries | 5 / 5 kept every number and the verdict |
+| Automated tests | 155 passing (core 96, agent 30, orchestrator 26, MCP 3) |
+
+Small samples: read the AI rows as signs, not accuracy figures.
+
+## ⚙️ Tech stack
 
 | Layer | Tech |
 |---|---|
-| Calculation engine (`packages/core`) | TypeScript, pure functions with no machine learning; tested with Vitest |
-| Agent logic (`packages/agent`) | TypeScript: questions, profile, state machine, tools, sales reports; sessions in SQLite (`node:sqlite`) |
-| Orchestrator / API (`services/orchestrator`) | Node.js 26 with plain `node:http`, run via `tsx`; HTTP API, number/verdict guard, ElevenLabs bridge |
-| Tool server (`services/mcp-tools`) | MCP SDK 1.32.1, over stdio or HTTP |
-| AI model | OpenAI `gpt-6-astra`: Responses API for tool calling, Chat Completions for photos and PDFs; swappable to Claude or other OpenAI models by config |
-| Voice | ElevenLabs Conversational AI with our orchestrator as its custom LLM; voice Sarah on `eleven_flash_v2_5` (multilingual); live transcripts over WebSocket |
-| Web app (`app/`) | React 19, Vite 6, Tailwind CSS 4; Hearth theme with Fraunces, Geist and Geist Mono |
-| Map | Leaflet 1.9.4 with OpenStreetMap tiles; addresses via OpenStreetMap Nominatim |
-| Phone app | Flutter (Android) on the same backend API; tested with Maestro |
-| Email reports | nodemailer (SMTP), built but not switched on yet |
-| Hosting (demo) | Mac mini on Tailscale; public address via Tailscale Funnel for ElevenLabs and the phone app |
-| Repo | npm workspaces monorepo; built with Claude Code |
-| Pitch deck | HTML slides printed to PDF with headless Chrome (`submissions/pitch/`) |
+| Calculation engine (`packages/core`) | TypeScript, pure functions, no machine learning; Vitest |
+| Agent logic (`packages/agent`) | Questions, profile with provenance, state machine, tools, sales reports; SQLite sessions |
+| Orchestrator (`services/orchestrator`) | Node.js, `node:http`, `tsx`; HTTP API, number/verdict guard, ElevenLabs custom-LLM bridge |
+| Tool server (`services/mcp-tools`) | MCP SDK, stdio or HTTP |
+| AI model | OpenAI `gpt-6-astra` (Responses API for tools; vision for photos and PDFs), swappable by config |
+| Voice | ElevenLabs Conversational AI, `eleven_flash_v2_5`, live transcripts over WebSocket |
+| Web app (`app/`) | React 19, Vite 6, Tailwind CSS 4; "Hearth" theme (Fraunces, Geist, Geist Mono) |
+| Map | Leaflet + OpenStreetMap; Nominatim geocoding (consented addresses only) |
+| Phone app | Flutter (Android), same backend |
+| Demo hosting | Mac mini on Tailscale, public via Tailscale Funnel (**offline since the event ended**) |
 
-## Repo map
+## 🚀 Run it
+
+```bash
+npm install
+npm run dev -w app        # web app → http://localhost:5173 (works without an API key)
+npm test                  # engine, agent, orchestrator and MCP tests
+```
+
+For the AI helpers, copy `app/.env.example` to `app/.env` and set a key. The assistant backend (orchestrator + MCP
+server) runs separately; see [`services/README.md`](services/README.md). **Never commit `.env` files.**
+
+> If the build fails on Windows/Linux with `Cannot find module ../lightningcss.<platform>.node`, delete
+> `node_modules` and `package-lock.json` and run `npm install` again (the lockfile has the Mac binaries).
+
+## 🗂 Repo map
 
 | Path | What |
 |---|---|
-| `app/` | Vite + React UI: homeowner check and result, sales dashboard (demo houses), **Live leads** dashboard (real backend leads), expert-check flow, technician briefing |
-| `packages/core/` | Engine, sales logic, AI calls, building data. Every number and verdict comes from here |
-| `packages/agent/` | Conversation slots (ASK/ADAPT/PHOTO/TECH/SALES/CONTACT, de/en), profile with provenance, next-question logic, state machine, dynamic customer promises, sales report (file, e-mail, webhook), tools. Used by the orchestrator and MCP server |
-| `services/mcp-tools/` | MCP server that exposes the same tools (stdio or HTTP) |
-| `services/orchestrator/` | Voice/chat assistant backend: Astra tool loop with a number/verdict guard, multi-language following, HTTP API, ElevenLabs custom-LLM bridge, token-protected lead API behind **Live leads**. See [`services/README.md`](services/README.md) |
-| `kit/` | Official challenge pages (`kit/docs/`), the 5 buildings (`kit/data/`), installer-labelled pipe photos (`kit/photos/`) |
-| `docs/` | Refined approach, app spec, agent backend spec, pitch outline |
-| `notes/` | `workflow.md` (append-only work log), `challenge.md` and `ai_onboarding_prompt.md` (older, partly out of date) |
-| `submissions/` | Final deliverables |
-| `data/`, `scratch/` | Local only (gitignored contents) |
-| `src/` | Leftover from the scaffold; not used |
+| `app/` | Web app: homeowner check, result, Live leads dashboard, briefing |
+| `packages/core/` | Engine, sales logic, AI calls, building data: every number and verdict comes from here |
+| `packages/agent/` | Conversation slots, profile, next-question logic, state machine, tools, sales report |
+| `services/orchestrator/` | Voice/chat backend: Astra tool loop, guard, HTTP API, ElevenLabs bridge, lead API |
+| `services/mcp-tools/` | The same tools as an MCP server |
+| `submissions/` | Pitch deck (PDF + sources), demo video pipeline, app download page |
+| `docs/` | Specs, prompts, [rule-by-rule sources](docs/REFERENCES.md), [hackathon recap](docs/HACKATHON_RECAP.md) |
+| `kit/` | The official challenge kit (buildings, guardrails, labelled photos) |
 
-## Team rules
+## 📚 Sources behind the rules
 
-See [`GOVERNANCE.md`](GOVERNANCE.md). In short: the owner (Mulaydm10) decides scope and pitch; `notes/workflow.md` is
-append-only; never commit secrets, `.env` files, API keys or raw datasets; small commits straight to `main`.
+13 public sources, mapped rule by rule in [`docs/REFERENCES.md`](docs/REFERENCES.md), including:
+- **Building age never rules a home out:** Fraunhofer ISE monitored 77 heat pumps in existing homes and found no
+  correlation between construction year and efficiency.
+- **~55 °C is a screening reference, not a wall:** Verbraucherzentrale's rule of thumb.
+- **The exact heat load is checked room by room on site:** Umweltbundesamt and nuuEnergy's own process.
+- **Questions and photo tasks** follow real installer intake (Enpal, Aira, thermondo).
+- **All formulas and prices** come from nuuEnergy's technical guardrails.
 
-## Sources behind the rules
+## 👥 Team
 
-The parameters and rules are backed by public sources, mapped rule by rule in [`docs/REFERENCES.md`](docs/REFERENCES.md):
-- **Building age never rules a home out:** Fraunhofer ISE measured 77 heat pumps in existing homes and found no
-  correlation between construction year and efficiency (SPF 2.6–5.4); adequately sized radiators run almost as low as
-  underfloor heating.
-- **~55 °C is a screening reference, not pass/fail:** Verbraucherzentrale's rule of thumb (flow temperature below 55 °C
-  most of the year); insulation, large heating surfaces and hydraulic balancing matter.
-- **The exact heat load is checked room by room on site:** Umweltbundesamt Gebäudecheck and nuuEnergy's own process.
-- **Questions and photo tasks** follow real installer intake (Enpal, Aira, thermondo, incl. thermondo's photo guide).
-- **Address and age data are estimates to confirm:** ETHOS.BUILDA (ODbL), TABULA/EPISCOPE, Census 2022.
-- **All formulas and prices** come from nuuEnergy's Technical Guardrails.
+**Team NoIdea**: Dhruv Mulay · Parth Deshmukh · Pratik Waghmode
+Built at **WATT THE HACK Munich 2026** (Munich Climate Week) for the **nuuEnergy** challenge, with Claude Code.
 
-## Data and credits
+The 5 buildings, photos and guardrail values are from nuuEnergy's challenge kit. Map data © OpenStreetMap contributors.
 
-The 5 buildings, photos and guardrail values are from nuuEnergy's challenge kit. If we add address-based data
-(ETHOS.BUILDA, ODbL, or open aerial imagery), the app shows the source and credit next to each value.
+<div align="center">
+<br>
+<b><i>Fewer wasted visits. More homes that say yes.</i></b>
+</div>
