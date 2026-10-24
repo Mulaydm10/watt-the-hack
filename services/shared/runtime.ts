@@ -1,11 +1,11 @@
 // Runtime wiring shared by the MCP server and the orchestrator: env, LLM config, few-shot photos, store, paths.
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configureLlm } from '@hpr/core/ai/provider';
 import { setExampleLoader } from '@hpr/core/ai/classifyPipePhoto';
-import { SqliteStore, type ToolConfig } from '@hpr/agent';
+import { mergeOutcomeConfig, SqliteStore, type OutcomeConfig, type ToolConfig } from '@hpr/agent';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(here, '..', '..');
@@ -31,6 +31,24 @@ export function initRuntime() {
     webhookUrl: process.env.SALES_WEBHOOK_URL || undefined,
     publicBaseUrl: process.env.PUBLIC_BASE_URL ?? 'http://localhost:8787',
     consentTextVersion: process.env.CONSENT_TEXT_VERSION ?? 'v0-draft',
+    outcome: loadOutcomeConfig(),
+    mail: mailConfigFromEnv(),
   };
   return { store, toolConfig };
+}
+
+export const OUTCOMES_FILE = () => join(DATA_DIR, 'outcomes.json');
+
+/** Customer promises per outcome (callback working days, text overrides, holidays). Editable without code changes. */
+export function loadOutcomeConfig(): OutcomeConfig {
+  const f = OUTCOMES_FILE();
+  return mergeOutcomeConfig(existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : undefined);
+}
+export function saveOutcomeConfig(c: OutcomeConfig) { writeFileSync(OUTCOMES_FILE(), JSON.stringify(c, null, 2)); }
+
+/** E-mail delivery of sales reports (SMTP). Inactive until MAIL_TO and SMTP_* are set in services/.env. */
+export function mailConfigFromEnv() {
+  const e = process.env;
+  if (!e.MAIL_TO || !e.SMTP_HOST) return undefined;
+  return { to: e.MAIL_TO, from: e.MAIL_FROM ?? e.SMTP_USER ?? 'heatpump-assistant@localhost', host: e.SMTP_HOST, port: Number(e.SMTP_PORT ?? 465), user: e.SMTP_USER, pass: e.SMTP_PASS };
 }

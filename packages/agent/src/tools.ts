@@ -13,11 +13,11 @@ import { nextQuestions, photoTasks } from './nextQuestions';
 import { outcomeKey, outcomeText, DEFAULT_OUTCOME_CONFIG, type OutcomeConfig } from './outcomes';
 import { meterCabinetFromPhoto, pipeFromPhotos, billFromDocument } from './photoAi';
 import { setSlot, toBuilding, toCommitment, toPreCheck, type Provenance } from './profile';
-import { buildLead, buildReport, deliverReport } from './report';
+import { buildLead, buildReport, deliverReport, type MailConfig } from './report';
 import { deriveState, progress, type Session } from './session';
 import { SLOT_BY_ID, SLOTS, type Lang } from './slots';
 
-export type ToolConfig = { reportsDir: string; webhookUrl?: string; publicBaseUrl: string; outcome?: OutcomeConfig; consentTextVersion?: string };
+export type ToolConfig = { reportsDir: string; webhookUrl?: string; publicBaseUrl: string; outcome?: OutcomeConfig; consentTextVersion?: string; mail?: MailConfig };
 export type ToolCtx = { session: Session; config: ToolConfig };
 export type JsonSchema = Record<string, unknown>;
 export type Tool = { name: string; description: string; parameters: JsonSchema; handler: (ctx: ToolCtx, args: any) => Promise<unknown> | unknown };
@@ -294,16 +294,17 @@ export const TOOLS: Tool[] = [
       const s = ctx.session;
       const { a, d } = decision(ctx);
       const consented = Boolean(s.consent?.share);
+      const preferredTime = s.consent?.contact ? (s.profile.slots.contact_time?.value as string | undefined) : undefined;
       const key = outcomeKey(a, d, consented);
-      let report: { lead_id: string; files: string[]; webhook?: number } | null = null;
+      let report: { lead_id: string; files: string[]; webhook?: number; mail?: string; mailError?: string } | null = null;
       if (consented) {
         s.leadId ??= `L-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${s.id.slice(-4).toUpperCase()}`;
-        const promised = outcomeText(key, 'en', { a, d, cfg: ctx.config.outcome ?? DEFAULT_OUTCOME_CONFIG });
+        const promised = outcomeText(key, 'en', { a, d, cfg: ctx.config.outcome ?? DEFAULT_OUTCOME_CONFIG, preferredTime });
         const r = buildReport(s, s.leadId, promised);
-        const sent = await deliverReport(r, { dir: ctx.config.reportsDir, webhookUrl: ctx.config.webhookUrl });
+        const sent = await deliverReport(r, { dir: ctx.config.reportsDir, webhookUrl: ctx.config.webhookUrl, mail: ctx.config.mail });
         report = { lead_id: s.leadId, ...sent };
       }
-      const closing = outcomeText(key, s.lang, { a, d, path: pathToGreen(toBuilding(s.profile), s.profile.pipePhoto), ref: s.leadId, cfg: ctx.config.outcome });
+      const closing = outcomeText(key, s.lang, { a, d, path: pathToGreen(toBuilding(s.profile), s.profile.pipePhoto), ref: s.leadId, cfg: ctx.config.outcome, preferredTime });
       s.outcomeText = closing;
       s.flags.finished = true;
       return { outcome: key, closing_statement: closing, report };

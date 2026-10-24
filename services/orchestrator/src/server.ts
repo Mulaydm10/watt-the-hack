@@ -6,8 +6,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assess } from '@hpr/core/engine/assess';
 import { resultAreas } from '@hpr/core/engine/areas';
-import { newSession, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
-import { DATA_DIR, initRuntime } from '../../shared/runtime';
+import { mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
+import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
 import { defaultModel, type ModelClient } from './model';
 
@@ -128,11 +128,23 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       if (!store.get(id)) { res.writeHead(404).end('Link expired'); return; }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(UPLOAD_PAGE(id));
     }],
-    ['GET', /^\/health$/, async (_req, res) => json(res, 200, { ok: true })],
+    ['GET', /^\/settings\/outcomes$/, async (_req, res, _p, url) => {
+      // Current promises per outcome + a preview of what each would say today.
+      const lang = url.searchParams.get('lang') === 'de' ? 'de' : 'en';
+      const demo = assess({ construction_year: 2005, floor_area_m2: 150, renovation_status: null, heat_distribution: 'underfloor', annual_consumption_kwh: 15000, energy_carrier: 'gas', pipe_system: 'unknown', flow_temperature_c: null, persons_in_household: 2, hot_water_via_heating: true, rooms: null });
+      const preview = Object.fromEntries(OUTCOME_KEYS.map((k) => [k, outcomeText(k, lang, { a: demo, d: null, cfg: config.outcome, preferredTime: 'morning', ref: 'L-PREVIEW' })]));
+      json(res, 200, { config: config.outcome, preview });
+    }],
+    ['PUT', /^\/settings\/outcomes$/, async (req, res) => {
+      config.outcome = mergeOutcomeConfig(await readJson(req));
+      saveOutcomeConfig(config.outcome);
+      json(res, 200, { config: config.outcome });
+    }],
+    ['GET', /^\/health$/, async (_req, res) => json(res, 200, { ok: true, mail: Boolean(config.mail), webhook: Boolean(config.webhookUrl) })],
   ];
 
   return createServer(async (req, res) => {
-    if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,PUT,PATCH', 'access-control-allow-headers': 'content-type' }).end(); return; }
+    if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE', 'access-control-allow-headers': 'content-type' }).end(); return; }
     const url = new URL(req.url ?? '/', 'http://x');
     for (const [method, re, h] of routes) {
       const m = url.pathname.match(re);

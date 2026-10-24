@@ -103,8 +103,24 @@ export function reportSummary(r: Report): string {
   ].join('\n');
 }
 
-/** Delivery: always to disk; also POSTs to SALES_WEBHOOK_URL when configured. */
-export async function deliverReport(r: Report, opts: { dir: string; webhookUrl?: string }): Promise<{ files: string[]; webhook?: number }> {
+export type MailConfig = { to: string; from: string; host: string; port: number; user?: string; pass?: string };
+
+/** Send the report by e-mail: readable summary in the body, full JSON attached. */
+async function mailReport(r: Report, m: MailConfig): Promise<string> {
+  const { createTransport } = await import('nodemailer');
+  const t = createTransport({ host: m.host, port: m.port, secure: m.port === 465, auth: m.user ? { user: m.user, pass: m.pass } : undefined });
+  const info = await t.sendMail({
+    from: m.from,
+    to: m.to,
+    subject: `[Heat Pump Ready] ${r.visit_decision.label} · ${r.assessment.verdict} · ${r.location?.area ?? '?'} · ${r.lead_id}`,
+    text: reportSummary(r),
+    attachments: [{ filename: `${r.lead_id}.json`, content: JSON.stringify(r, null, 2), contentType: 'application/json' }],
+  });
+  return info.messageId;
+}
+
+/** Delivery: always to disk; also e-mail (MAIL_TO + SMTP_*) and/or webhook (SALES_WEBHOOK_URL) when configured. */
+export async function deliverReport(r: Report, opts: { dir: string; webhookUrl?: string; mail?: MailConfig }): Promise<{ files: string[]; webhook?: number; mail?: string; mailError?: string }> {
   mkdirSync(opts.dir, { recursive: true });
   const json = join(opts.dir, `${r.lead_id}.json`);
   const md = join(opts.dir, `${r.lead_id}.md`);
@@ -115,5 +131,10 @@ export async function deliverReport(r: Report, opts: { dir: string; webhookUrl?:
     const res = await fetch(opts.webhookUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ report: r, summary: reportSummary(r) }), signal: AbortSignal.timeout(10_000) });
     webhook = res.status;
   }
-  return { files: [json, md], webhook };
+  let mail: string | undefined;
+  let mailError: string | undefined;
+  if (opts.mail) {
+    try { mail = await mailReport(r, opts.mail); } catch (e) { mailError = (e as Error).message; }
+  }
+  return { files: [json, md], webhook, mail, mailError };
 }
