@@ -207,6 +207,18 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       if (token && req.headers.authorization !== `Bearer ${token}`) return json(res, 401, { error: 'unauthorized' });
       await handleChatCompletions(req, res, await readJson(req), store, config, model);
     }],
+    // Live voice for the phone app: a short-lived ElevenLabs signed URL, so the app never holds the API key.
+    // The app opens the WebSocket itself (full-duplex audio + live transcripts); the agent's brain is still this
+    // orchestrator (custom LLM), so the guard and the engine apply unchanged.
+    ['GET', /^\/voice\/signed-url$/, async (_req, res) => {
+      const key = process.env.ELEVENLABS_API_KEY;
+      const agent = process.env.ELEVENLABS_AGENT_ID;
+      if (!key || !agent) return json(res, 503, { error: 'voice not configured' });
+      const r = await fetch(`https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${encodeURIComponent(agent)}`, { headers: { 'xi-api-key': key }, signal: AbortSignal.timeout(10_000) });
+      if (!r.ok) return json(res, 502, { error: `elevenlabs ${r.status}` });
+      const { signed_url } = await r.json();
+      json(res, 200, { signed_url, agent_id: agent, expires_in_s: 900, audio: { input: 'pcm_16000', note: 'see agent config for output format' } });
+    }],
     ['GET', /^\/health$/, async (_req, res) => json(res, 200, { ok: true, mail: Boolean(config.mail), webhook: Boolean(config.webhookUrl) })],
   ];
 

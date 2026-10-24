@@ -269,3 +269,20 @@ describe('photo analysis never stays pending', () => {
     expect(st.error).toBeTruthy();
   });
 });
+
+describe('phone app live voice: continues the app session', () => {
+  it('a voice request with hpr_session continues that session (same answers, same result)', async () => {
+    const store = new MemoryStore();
+    const server = buildServer(store, config, new RuleModel());
+    await new Promise<void>((r) => server.listen(0, r));
+    const base = `http://localhost:${(server.address() as AddressInfo).port}`;
+    const { session_id } = await fetch(`${base}/sessions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"channel":"chat","lang":"en"}' }).then((r) => r.json());
+    await fetch(`${base}/sessions/${session_id}/messages`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"text":"yes"}' });
+    await fetch(`${base}/v1/chat/completions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stream: false, messages: [{ role: 'system', content: `conversation_id: {{system__conversation_id}}\nhpr_session: ${session_id}\nlanguage: auto` }, { role: 'user', content: 'English please' }] }) });
+    server.close();
+    const s = store.get(session_id)!;
+    expect(s.channel).toBe('voice');
+    expect(s.profile.slots.lang?.value).toBe('en');
+    expect(store.list().filter((x) => x.id.startsWith('el-'))).toHaveLength(0);
+  });
+});

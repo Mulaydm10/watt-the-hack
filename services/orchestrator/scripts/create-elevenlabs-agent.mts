@@ -27,9 +27,11 @@ const config = {
   conversation_config: {
     agent: {
       first_message: greeting,
+      // The phone app passes its session id; "none" for the web widget / phone line.
+      dynamic_variables: { dynamic_variable_placeholders: { hpr_session: 'none' } },
       language: 'de',
       prompt: {
-        prompt: 'conversation_id: {{system__conversation_id}}\nlanguage: auto\nYou are a voice front end. All answers come from the custom LLM; do not add content.',
+        prompt: 'conversation_id: {{system__conversation_id}}\nhpr_session: {{hpr_session}}\nlanguage: auto\nYou are a voice front end. All answers come from the custom LLM; do not add content.',
         llm: 'custom-llm',
         custom_llm: { url: `${PUBLIC}/v1`, model_id: 'heatpump-orchestrator', api_key: { secret_id: secret.secret_id } },
         // Our turns take ~5–8 s: wait the maximum and never fall back to another model (it would bypass our guard).
@@ -49,7 +51,8 @@ const config = {
     tts: { voice_id: VOICE, model_id: 'eleven_flash_v2_5', stability: 0.6, speed: 0.92 },
     // Patience for older callers: wait longer before deciding the caller has finished.
     turn: { turn_timeout: 12 },
-    conversation: { max_duration_seconds: 1500 },
+    // Live captions in the phone app: final + interim transcripts for both sides, plus voice activity.
+    conversation: { max_duration_seconds: 1500, client_events: ['audio', 'interruption', 'agent_response', 'user_transcript', 'agent_response_correction', 'agent_tool_response', 'tentative_user_transcript', 'internal_tentative_agent_response', 'vad_score'] },
   },
 };
 

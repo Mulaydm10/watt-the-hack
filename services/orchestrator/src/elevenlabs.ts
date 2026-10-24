@@ -20,6 +20,13 @@ type OaiRequest = { messages: OaiMessage[]; stream?: boolean; user?: string; mod
 const textOf = (m?: OaiMessage) => (typeof m?.content === 'string' ? m.content : (m?.content ?? []).map((p) => p.text ?? '').join(''));
 const MATCH_WINDOW_MS = 45 * 60 * 1000;
 
+/** App session passed by the phone app as the dynamic variable `hpr_session` (default "none" when absent). */
+export function appSessionId(body: OaiRequest): string | null {
+  const sys = body.messages.filter((m) => m.role === 'system').map(textOf).join('\n');
+  const m = sys.match(/hpr_session:\s*([A-Za-z0-9-]{8,})/);
+  return m && m[1] !== 'none' ? m[1] : null;
+}
+
 export function conversationId(body: OaiRequest): string | null {
   const sys = body.messages.filter((m) => m.role === 'system').map(textOf).join('\n');
   return sys.match(/conversation_id:\s*([A-Za-z0-9_-]{6,})/)?.[1] ?? body.user ?? null;
@@ -59,7 +66,11 @@ export async function handleChatCompletions(_req: IncomingMessage, res: ServerRe
   const turns = body.messages.filter((m) => m.role === 'user').map((m) => textOf(m).trim());
   const userText = turns.at(-1) ?? '';
   const cid = conversationId(body);
-  let s = (cid ? store.get(`el-${cid}`) : undefined) ?? findByHistory(store, turns.slice(0, -1));
+  // Phone app call: continue the app's own session (typing and talking share one session and one result).
+  const app = appSessionId(body);
+  const appSession = app ? store.get(app) : undefined;
+  if (appSession) appSession.channel = 'voice';
+  let s = appSession ?? (cid ? store.get(`el-${cid}`) : undefined) ?? findByHistory(store, turns.slice(0, -1));
   if (!s) {
     s = newSession(`el-${cid ?? `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`}`, 'voice', detectLang(body));
     startConversation(s); // ElevenLabs speaks the same greeting as its first_message
@@ -150,5 +161,6 @@ function send(res: ServerResponse, body: OaiRequest, id: string, mdl: string, re
 
 /** Prompt text for the ElevenLabs agent. Rules live in our orchestrator, not here. */
 export const ELEVENLABS_AGENT_PROMPT = `conversation_id: {{system__conversation_id}}
+hpr_session: {{hpr_session}}
 language: auto
 You are a voice front end. All answers come from the custom LLM; do not add content.`;
