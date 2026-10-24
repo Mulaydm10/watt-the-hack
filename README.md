@@ -3,6 +3,10 @@
 Munich Climate Week, 2026-10-24, 09:00-19:00 CEST, Audimax Muenchen. One-day build.
 Sponsor challenge: nuu energy or Ecurious (TBC).
 
+**Start here:** [`PROBLEM_AND_APPROACH.md`](PROBLEM_AND_APPROACH.md) has the problem statement, what the organisers
+told us on site, the approach so far and the open questions. The challenge is nuuEnergy's "Heat Pump Ready?", and the
+code now lives in `app/` and `packages/core/` (the `src/` lines below are from the scaffold).
+
 ## Repo map
 - `notes/challenge.md` - the sponsor brief (fill in first)
 - `notes/workflow.md` - append-only timestamped work log
