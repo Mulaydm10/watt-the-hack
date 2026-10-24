@@ -1,0 +1,35 @@
+[page] Heat Pump Ready? One-Pager
+    Track: Buildings & Everyday Energy · Challenge partner: nuuEnergy
+  [sub_header] The problem
+  Millions of homes still heat with gas or oil. Heat pumps are the cleaner alternative and work in far more existing buildings than people think. Yet most homeowners never get past the first question: "Would a heat pump even work in my home?" Today, only a technician's visit answers it.
+  [sub_header] Your challenge
+  Build a tool that gives a homeowner an honest first answer in under three minutes, using only what they already have: their energy bill, a few facts about the building and some smartphone photos.
+  The result must tell the homeowner:
+  [bulleted_list] Ready or not? Green / yellow / red, with a reason they understand
+  [bulleted_list] What's still open? What the tool can't tell, and what a technician has to check on site
+  How you get there is up to you.
+  [sub_header] What you get
+  [bulleted_list] 5 real example buildings (CSV + JSON): 3 come with nuuEnergy's reference values to build and calibrate on, for 2 the jury keeps the reference values hidden
+  [bulleted_list] Fixed assumptions, so all cost comparisons are comparable:
+    Value | Assumption
+    26 ct/kWh | Heat-pump electricity
+    11 ct/kWh | Natural gas
+    1.70 €/litre (≈ 17 ct/kWh) | Heating oil
+    4.0 underfloor heating · 3.5 radiators up to 55 °C · 2.8 radiators 55–60 °C | Heat-pump efficiency (JAZ)
+  [bulleted_list] Background reading: ‣
+  [sub_header] What you deliver
+  [bulleted_list] A working prototype that runs in the browser
+  [bulleted_list] Your results for the 2 evaluation buildings, shown in the pitch
+  [bulleted_list] A live demo, not slides
+  [sub_header] How we judge
+    Points | Criterion
+    25 | Technical execution & reliability
+    25 | Problem-solution fit & user value
+    20 | Explainability & handling uncertainty
+    15 | Innovation & smart use of technology
+    15 | Feasibility & scalability
+    A tool that says "I can't tell from this data, a technician must check X and Y" beats one that returns a confident wrong number.
+  [sub_header] Prize
+  €1,000 in cash · a soccer table · a Tech Day with the nuuEnergy product team
+  [toggle] Key terms
+  [SUBPAGE] Background: Single-pipe vs. two-pipe heating (40093c43-cade-811f-b9a3-f89ffae41184)

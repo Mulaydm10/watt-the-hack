@@ -1,0 +1,8 @@
+[page] Deliverables & Bonus
+  [sub_header] What you deliver
+  [numbered_list] A working prototype that runs in the browser.
+  [numbered_list] Your results for the 3 evaluation buildings (buildings_eval), shown in the pitch. 
+  [numbered_list] A live demo, not slides.
+  [sub_header] Bonus Challenges (optional, if time permits)
+  [bulleted_list] Read an uploaded energy bill automatically (consumption, energy carrier, costs).
+  [bulleted_list] Installation-risk detection: flag spatial constraints from photos (e.g. where the outdoor unit could realistically go).

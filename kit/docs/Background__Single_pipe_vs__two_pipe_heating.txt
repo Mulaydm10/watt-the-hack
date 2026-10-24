@@ -1,0 +1,41 @@
+[page] Background: Single-pipe vs. two-pipe heating
+    One field in the dataset is pipe_system (two-pipe / single-pipe / unknown). This page explains what that means, why it matters for heat pumps and why it is often hard to tell from photos.
+  [sub_header] The difference in one sentence each
+  [bulleted_list] Two-pipe system (Zweirohrheizung): every radiator gets hot water from a shared supply pipe and sends the cooled water back through a separate return pipe. All radiators get water at roughly the same temperature.
+  [bulleted_list] Single-pipe system (Einrohrheizung): one pipe runs as a loop from radiator to radiator. Each radiator takes some water out of the loop and puts it back into the same pipe. So the water gets cooler from radiator to radiator.
+  Single-pipe systems were common in German buildings from the 1960s and 1970s, especially in apartment buildings. Most other buildings use two-pipe systems.
+  [sub_header] Why it matters for heat pumps
+  A heat pump works most efficiently at a low flow temperature (see the JAZ values in the One-Pager).
+  [bulleted_list] In a single-pipe loop, the last radiators only get water that has already cooled down. To keep those rooms warm, the system usually needs a higher flow temperature, which means a lower JAZ and higher running costs.
+  [bulleted_list] Single-pipe loops are harder to balance. Water partly bypasses the radiators, so the return water stays warm, which heat pumps don't like.
+  [bulleted_list] This is not a deal-breaker. Heat pumps can work with single-pipe systems, but a technician usually has to check things first: for example larger radiators at the end of the loop, a higher flow temperature or converting parts of the system.
+  Rule of thumb for your tool: a confirmed single-pipe system is rarely a clean "green" without an on-site check.
+  [sub_header] How to spot it in photos
+    What it points to | What you see
+    Likely two-pipe | Valve at the top, return fitting at the bottom, two separate pipes with no connection between them
+    Likely single-pipe | One pipe running along the wall or skirting from radiator to radiator, often with a short bypass piece between the pipes
+    Often single-pipe, but two-pipe versions of this valve exist | One single connection at the bottom of the radiator, both pipes coming from the floor into one valve
+    Often can't tell: these exist for both systems. An extra adjustable port on the side (for the bypass) points to single-pipe | Compact valve block under the radiator ("H-block") with two pipes
+    Single-pipe more likely, but not proof | Construction year 1960s to 1970s, apartment building
+  [sub_header] Why photos are often not enough
+  [bulleted_list] Two pipes at a radiator do not mean two-pipe. Single-pipe radiators also have two connections.
+  [bulleted_list] The system belongs to the building, not to one radiator. A brand-new bathroom radiator on an old single-pipe loop is still single-pipe.
+  [bulleted_list] The best evidence is usually not at the radiator: how the pipes run between radiators, markings on the valve, or the pipe layout in the boiler room.
+  Even experienced installers are sometimes unsure from a single photo.
+  [sub_header] What we expect from your tool
+  [bulleted_list] If pipe_system is given, use it.
+  [bulleted_list] If it is unknown, you can estimate it from photos and construction year, but show how confident you are and why.
+  [bulleted_list] If you can't tell, say so. For example: "Heating pipe system unclear from the photos. A technician should check whether this is a single-pipe system, because that can require a higher flow temperature."
+  This is exactly what the jury means by handling uncertainty.
+  [sub_header] Photo examples
+    Real photos from nuuEnergy projects (anonymised), each assessment confirmed by a heating installer.
+  [sub_sub_header] 1. Single-pipe: the classic loop
+  [IMAGE] 06_unklar_rohrverzweigung.jpg attachment:cbc40d2e-d3fe-4093-9103-cde0e350402e:06_unklar_rohrverzweigung.jpg
+  [sub_sub_header] 2. Single-pipe: hidden in a valve block
+  [IMAGE] 11_unklar_h-block-seitenanschluss.jpeg attachment:1413cee0-ab6f-4652-b48e-12b592c73c74:11_unklar_h-block-seitenanschluss.jpeg
+  [sub_sub_header] 3. Two-pipe: the classic layout
+  [IMAGE] 05_zweirohr-vermutet_kompakt.jpeg attachment:427c318a-3553-4ae3-9ceb-27d93fcf0f78:05_zweirohr-vermutet_kompakt.jpeg
+  [sub_sub_header] 4. Two-pipe: modern valve block
+  [IMAGE] 10_unklar_h-block-simplex.jpeg attachment:5081e23b-674d-4027-847f-a61721775e7a:10_unklar_h-block-simplex.jpeg
+  [sub_sub_header] 5. Can't tell from the photo
+  [IMAGE] 07_unklar_bad-multiblock.jpeg attachment:751ce68c-31fe-4e4d-a234-93d1e7282daa:07_unklar_bad-multiblock.jpeg
