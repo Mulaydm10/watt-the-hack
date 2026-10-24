@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { assess } from '@hpr/core/engine/assess';
 import { resultAreas } from '@hpr/core/engine/areas';
 import { mergeOutdoorFinding, type OutdoorFinding } from '@hpr/core/ai/classifyOutdoorPhoto';
-import { mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
+import { buildReport, deliverReport, mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
 import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
 import { handleChatCompletions } from './elevenlabs';
@@ -95,6 +95,12 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
         if (kind === 'outdoor' && done?.finding) fresh.profile.outdoor = mergeOutdoorFinding(fresh.profile.outdoor, done.finding as OutdoorFinding);
         fresh.toolLog.push(...work.toolLog.slice(-1));
         store.save(fresh);
+        // A photo that arrives after the call updates the lead: rebuild the report (assessment re-run) with the
+        // original promise and write it again; Live leads reads these files. No new e-mail per photo.
+        if (fresh.flags.finished && fresh.leadId && fresh.consent?.share) {
+          const promised = leads.report(fresh.leadId)?.promised_to_customer ?? fresh.outcomeText ?? '';
+          deliverReport(buildReport(fresh, fresh.leadId, promised), { dir: config.reportsDir, webhookUrl: config.webhookUrl }).catch(() => undefined);
+        }
       }).catch(() => undefined);
     }],
     ['GET', /^\/sessions\/([\w-]+)\/photos\/([\w-]+)$/, async (_req, res, [id, pid]) => {

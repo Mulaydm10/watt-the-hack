@@ -10,6 +10,7 @@ import { preCheckTasks } from '@hpr/core/sales/preCheck';
 import type { Lead } from '@hpr/core/sales/types';
 import { tightPlacement } from '@hpr/core/sales/types';
 import { visitDecision } from '@hpr/core/sales/visitDecision';
+import { photoFindingSentence } from '@hpr/core/ai/photoSentence';
 import { toBuilding, toCommitment, toPreCheck } from './profile';
 import type { Session } from './session';
 
@@ -65,7 +66,7 @@ export function buildReport(s: Session, leadId: string, promised: string) {
     },
     visit_decision: { tier: d.tier, label: d.outOfArea ? 'Outside nuuEnergy service area' : TIER_INFO[d.tier].label, action: TIER_INFO[d.tier].action, reasons: d.reasons, commitment: d.commitment, p_sale: d.saleProbability, p_sale_steps: d.probabilitySteps, expected_value_eur: d.expectedValueEur },
     pre_check: { completeness_pct: d.preCheck, tasks: tasks.map((t) => ({ title: t.title, done: t.done, finding: t.finding })) },
-    photos: s.profile.photos.map((x) => ({ kind: x.kind, id: x.id, finding: x.finding ?? null })),
+    photos: s.profile.photos.map((x) => ({ kind: x.kind, id: x.id, finding: x.finding ?? null, sentence: photoFindingSentence(x.kind, x.finding ?? null) })),
     photo_requests: s.photoRequests,
     conversation: {
       user_turns: s.messages.filter((m) => m.role === 'user').length,
@@ -97,6 +98,7 @@ export function reportSummary(r: Report): string {
     '',
     `## Pre-check ${r.pre_check.completeness_pct}%`,
     ...r.pre_check.tasks.map((t) => `- ${t.done ? '✓' : '·'} ${t.title}: ${t.finding}`),
+    ...(r.photos.length ? ['', '## Photos', ...r.photos.map((p) => `- ${p.sentence}`)] : []),
     '',
     `**Promised to customer:** ${r.promised_to_customer}`,
     r.contact ? `**Contact:** ${r.contact.name ?? '—'} · ${r.contact.phone ?? '—'} · ${r.contact.preferred_time ?? 'any time'}` : '**Contact:** not shared',

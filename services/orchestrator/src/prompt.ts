@@ -2,7 +2,18 @@
 import { deriveState, type Session } from '@hpr/agent';
 import { languageName } from './language';
 
-export type TurnContext = { nextQuestion?: { slot: string; question: string; why: string; options?: { value: string; label: string }[] } | null };
+export type TurnContext = {
+  nextQuestion?: { slot: string; question: string; why: string; options?: { value: string; label: string }[] } | null;
+  /** Plain sentences for photo results that arrived in the background and were not mentioned yet. */
+  photoNews?: { kind: string; sentence: string }[];
+};
+
+function photoNewsBlock(news: TurnContext['photoNews']): string {
+  if (!news?.length) return '';
+  const docs = news.some((n) => n.kind === 'bill' || n.kind === 'certificate');
+  return `\nNEW PHOTO RESULTS (arrived since your last reply): mention each once, briefly and in plain words, then continue with the conversation.
+${news.map((n) => `- [${n.kind}] ${n.sentence}`).join('\n')}${docs ? '\nFor a bill or certificate value: read it back and ask the caller to confirm it; store it with update_profile (provenance bill_ai, or certificate for slot certificate_kwh_m2a) only after a clear yes.' : ''}\n`;
+}
 
 export function systemPrompt(s: Session, turn: TurnContext = {}): string {
   const spoken = languageName(s);
@@ -13,7 +24,7 @@ export function systemPrompt(s: Session, turn: TurnContext = {}): string {
   return `You are the nuuEnergy heat-pump assistant. You help homeowners, often older and not technical, find out whether a heat pump could work in their home. Speak ${lang}. Current state: ${deriveState(s)}.
 
 NEXT QUESTION (from the engine): ${turn.nextQuestion ? `[slot ${turn.nextQuestion.slot}] "${turn.nextQuestion.question}" (why: ${turn.nextQuestion.why})${turn.nextQuestion.options ? ` options: ${turn.nextQuestion.options.map((o) => o.value).join(', ')}` : ''}` : 'none — follow the state instructions'}
-
+${photoNewsBlock(turn.photoNews)}
 HOW YOU WORK
 - The state and next question above are current; you do not need get_state unless you changed several things. update_profile also returns the next question.
 - Ask exactly one question per turn, in plain, warm words. Never stack questions. Always accept "I don't know".

@@ -1,5 +1,6 @@
 // One conversation turn: caller text in → tool calls (as many as the model needs) → guarded reply out.
 import { deriveState, progress, runTool, TOOLS, type ChatMessage, type Session, type ToolConfig } from '@hpr/agent';
+import { photoFindingSentence } from '@hpr/core/ai/photoSentence';
 import { guardReply } from './guard';
 import { followLanguage, languageName } from './language';
 import type { ModelClient } from './model';
@@ -37,11 +38,14 @@ export async function handleTurn(s: Session, userText: string, model: ModelClien
   let retried = false;
   let violations: string[] = [];
   let reply: string | null = null;
+  // Photo results that arrived in the background since the last reply: the assistant mentions each once.
+  const news = s.profile.photos.filter((p) => p.finding != null && !p.mentioned && !(typeof p.finding === 'object' && 'error' in (p.finding as object)));
+  const photoNews = news.map((p) => ({ kind: p.kind, sentence: photoFindingSentence(p.kind, p.finding).replace(/ \(\d+% confident\)/, '') }));
 
   for (let step = 0; step < MAX_STEPS && reply == null; step++) {
     const st = (await runTool(ctx, 'get_state', {})) as { next_question: TurnContext['nextQuestion'] };
     s.toolLog.pop(); // internal lookup, not a model tool call
-    const sys = systemPrompt(s, { nextQuestion: st.next_question });
+    const sys = systemPrompt(s, { nextQuestion: st.next_question, photoNews });
     let msg;
     try {
       msg = await model.complete([{ role: 'system', content: sys }, ...s.messages], TOOLS);
@@ -77,5 +81,7 @@ export async function handleTurn(s: Session, userText: string, model: ModelClien
     reply = await fallbackReply(s, config);
     s.messages.push({ role: 'assistant', content: reply });
   }
+  // Only a real model reply can have mentioned the news; after a fallback it stays pending for the next turn.
+  if (!fallback) news.forEach((p) => { p.mentioned = true; });
   return { reply, state: deriveState(s), progress: progress(s), guard: { retried, fallback, violations: reply && !fallback ? [] : violations }, toolsCalled };
 }

@@ -246,6 +246,9 @@ export const TOOLS: Tool[] = [
       const ph = p.photos.find((x) => x.id === photo_id);
       if (!ph) return { error: 'photo not found' };
       const pathsOf = (kind: string) => p.photos.filter((x) => x.kind === kind).map((x) => x.path);
+      // The model sees the sentence in this result and says it now. Background runs work on a copy and merge only
+      // the finding, so their results stay unmentioned until the next turn.
+      ph.mentioned = true;
       try {
         if (ph.kind === 'radiator') {
           const f = await pipeFromPhotos(pathsOf('radiator'), toBuilding(p).construction_year);

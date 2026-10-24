@@ -8,7 +8,8 @@ import { SLOT_BY_ID, type Lang, type Slot } from './slots';
 export type Provenance = 'user_said' | 'user_estimate' | 'user_unknown' | 'bill_ai' | 'certificate' | 'photo_ai' | 'location_lookup';
 export type SlotValue = { value: unknown; unit?: string; provenance: Provenance; at: string; raw?: string };
 export type ConsumptionValue = { kwh: number; amount: number; unit: 'kwh' | 'litres' | 'm3' };
-export type PhotoRecord = { id: string; kind: string; path: string; at: string; finding?: unknown };
+/** `mentioned`: the assistant has already told the caller about this finding (it says each one once). */
+export type PhotoRecord = { id: string; kind: string; path: string; at: string; finding?: unknown; mentioned?: boolean };
 export type LocationInfo = { postcode: string; area: string; status: 'in' | 'out' | 'unknown'; region?: string; subsidyTopUp?: string };
 
 export type Profile = {
