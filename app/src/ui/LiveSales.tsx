@@ -26,6 +26,19 @@ const PROV: Record<string, string> = { user_said: 'said', user_estimate: 'estima
 const eur = (n: number | null | undefined) => (n == null ? '—' : `€${Math.round(n).toLocaleString('en-US')}`);
 const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+/** Photo thumbnail loaded with the sales token in the header (blob URL), revoked on unmount. */
+function PhotoThumb({ lead, photo, kind, fetcher }: { lead: string; photo: string; kind: string; fetcher: (path: string) => Promise<string> }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let url: string | null = null;
+    fetcher(`/leads/${lead}/photos/${photo}`).then((u) => { url = u; setSrc(u); }).catch(() => setFailed(true));
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [lead, photo, fetcher]);
+  if (failed) return <div className="flex aspect-[4/3] items-center justify-center text-xs text-[var(--sand)]">{kind}: preview unavailable (e.g. PDF)</div>;
+  return src ? <img src={src} alt={`${kind} photo`} className="aspect-[4/3] w-full object-cover" /> : <div className="aspect-[4/3] animate-pulse bg-[var(--surface-2)]" />;
+}
+
 function TierChip({ tier, label }: { tier: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs" style={{ borderColor: TIER_C[tier], color: TIER_C[tier] }}>
@@ -51,6 +64,12 @@ export function LiveSales() {
     if (r.status === 401) throw new Error('Wrong or missing sales token.');
     if (!r.ok) throw new Error(`Backend error ${r.status}`);
     return r.json();
+  }, [api, token]);
+
+  const blob = useCallback(async (path: string) => {
+    const r = await fetch(`${api.replace(/\/$/, '')}${path}`, { headers: { authorization: `Bearer ${token}` } });
+    if (!r.ok) throw new Error(String(r.status));
+    return URL.createObjectURL(await r.blob());
   }, [api, token]);
 
   const load = useCallback(async () => {
@@ -248,7 +267,18 @@ export function LiveSales() {
 
             {r.photos.length > 0 && (
               <section className="mt-8"><h3 className="font-serif-h text-xl">Photos</h3>
-                <ul className="mt-2 text-sm">{r.photos.map((p: { id: string; kind: string; finding: unknown }) => <li key={p.id}>{p.kind}: {p.finding ? JSON.stringify(p.finding) : 'not analysed'}</li>)}</ul>
+                <div className="mt-3 grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))' }}>
+                  {r.photos.map((p: { id: string; kind: string; sentence?: string }) => (
+                    <figure key={p.id} className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                      <PhotoThumb lead={r.lead_id} photo={p.id} kind={p.kind} fetcher={blob} />
+                      <figcaption className="p-3">
+                        <Eyebrow>{p.kind.replace('_', ' ')}</Eyebrow>
+                        <p className="mt-1 text-sm leading-snug">{p.sentence ?? 'Not analysed yet.'}</p>
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-[var(--sand)]">AI hints from photos; a technician confirms on site. They never change the traffic light.</p>
               </section>
             )}
 
