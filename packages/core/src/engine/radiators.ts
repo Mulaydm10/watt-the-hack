@@ -9,6 +9,10 @@ export function radiators(b: Building, h: HeatLoad, pipe: PipeSystem): Radiators
   if (dist === 'underfloor') {
     return { jaz: JAZ_UNDERFLOOR, jazWorst: JAZ_UNDERFLOOR, flowTemp: '~35 °C', reason: 'Underfloor heating runs at about 35 °C, ideal for a heat pump.', likelyAbove55: false };
   }
+  if (dist === 'wall' || dist === 'ceiling') {
+    // Not in the guardrails: treated like underfloor (low-temperature surface heating), technician confirms.
+    return { jaz: JAZ_UNDERFLOOR, jazWorst: JAZ_UNDERFLOOR, flowTemp: '~35 °C (assumed)', reason: `${dist === 'wall' ? 'Wall' : 'Ceiling'} heating is low-temperature surface heating, treated like underfloor heating (about 35 °C); a technician confirms the design temperature.`, likelyAbove55: false };
+  }
   const prefix = dist === 'mixed' ? 'Mixed system: the radiator circuit sets the flow temperature. ' : '';
 
   if (pipe === 'single-pipe') {

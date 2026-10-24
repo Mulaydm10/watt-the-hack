@@ -1,4 +1,4 @@
-import type { Building, Carrier, Distribution, PipeSystem, Renovation } from './types';
+import type { Building, Carrier, Distribution, HouseType, PipeSystem, Renovation } from './types';
 
 // Inputs arrive from forms, CSV and JSON. Anything implausible becomes "unknown" (null), never a bad value.
 const num = (v: unknown, min: number, max: number): number | null => {
@@ -24,9 +24,9 @@ export function sanitize(raw: Partial<Record<keyof Building, unknown>>): Buildin
     construction_year: num(raw.construction_year, 1800, 2030),
     floor_area_m2: num(raw.floor_area_m2, 15, 5000),
     renovation_status: oneOf<NonNullable<Renovation>>(raw.renovation_status, ['unrenovated', 'partially', 'fully']),
-    heat_distribution: oneOf<Distribution>(raw.heat_distribution, ['radiators', 'underfloor', 'mixed']),
+    heat_distribution: oneOf<Distribution>(raw.heat_distribution, ['radiators', 'underfloor', 'mixed', 'wall', 'ceiling']),
     annual_consumption_kwh: num(raw.annual_consumption_kwh, 1, 1_000_000),
-    energy_carrier: oneOf<Carrier>(raw.energy_carrier, ['gas', 'oil', 'district', 'electric']),
+    energy_carrier: oneOf<Carrier>(raw.energy_carrier, ['gas', 'oil', 'district', 'electric', 'biomass', 'other']),
     energy_carrier_detail: str(raw.energy_carrier_detail),
     radiator_info: str(raw.radiator_info),
     pipe_system: oneOf<PipeSystem>(raw.pipe_system, ['two-pipe', 'single-pipe', 'unknown']) ?? 'unknown',
@@ -37,6 +37,11 @@ export function sanitize(raw: Partial<Record<keyof Building, unknown>>): Buildin
     building_notes: str(raw.building_notes),
     location: str(raw.location),
     verified_on_site: raw.verified_on_site === true || undefined,
+    house_type: oneOf<HouseType>(raw.house_type, ['detached', 'semi', 'terraced', 'apartment', 'other']),
+    units_in_building: num(raw.units_in_building, 1, 500),
+    approval_needed: bool(raw.approval_needed),
+    certificate_kwh_m2a: num(raw.certificate_kwh_m2a, 5, 800),
+    uneven_heating: bool(raw.uneven_heating),
     reference_heating_load_kw: num(raw.reference_heating_load_kw, 0, 1000) ?? undefined,
     expected_verdict: oneOf(raw.expected_verdict, ['green', 'yellow', 'red'] as const) ?? undefined,
   };

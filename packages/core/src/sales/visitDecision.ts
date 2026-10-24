@@ -5,7 +5,7 @@ import { serviceArea } from './offer';
 import { preCheckCompleteness } from './preCheck';
 import type { Commitment, CommitmentLevel, Lead, Tier } from './types';
 
-const DECIDES = ['owner', 'co-owner', 'landlord'];
+const DECIDES = ['owner', 'co-owner', 'representative', 'landlord'];
 
 /** Commitment level from the homeowner's own answers only. Unanswered questions count as unknown, not negative. */
 export function commitmentLevel(c: Commitment): { level: CommitmentLevel; signals: string[] } {
@@ -57,6 +57,12 @@ export function visitDecision(lead: Lead, cfg: SalesConfig = DEFAULT_CONFIG, a: 
   const contradictions = a.flags.contradictions.filter((x) => x.critical);
   if (!tier && contradictions.length) reasons.push(`Data contradictions to clear first: ${contradictions.map((x) => x.title.toLowerCase()).join('; ')}.`);
   if (!tier && c.ownership === 'tenant') reasons.push('Tenant: the owner must be involved before a visit makes sense.');
+  const b = lead.building;
+  if (!tier && (b.approval_needed || b.house_type === 'apartment' || (b.units_in_building ?? 1) > 1)) {
+    reasons.push(b.approval_needed
+      ? 'Approval needed (landlord, owners\u2019 association or co-owners): involve them before a visit.'
+      : 'Apartment or multi-unit building: check who decides on the heating (owners\u2019 association) before a visit.');
+  }
   if (!tier && a.heatLoad.bestKw == null) reasons.push('No heat-load estimate yet: ask for the bill or building facts.');
   if (!tier && reasons.length) tier = 'C';
 

@@ -1,6 +1,6 @@
 import type { Building, PhotoFindings } from '../engine/types';
 
-export type Ownership = 'owner' | 'co-owner' | 'tenant' | 'landlord';
+export type Ownership = 'owner' | 'co-owner' | 'representative' | 'tenant' | 'landlord';
 export type BoilerAge = 'broken' | 'over20' | '10to20' | 'under10';
 export type Timeline = 'asap' | 'within6m' | 'within2y' | 'curious';
 export type YesNoUnsure = 'yes' | 'no' | 'unsure';

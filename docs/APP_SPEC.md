@@ -1,6 +1,6 @@
 # App spec: "Heat Pump Ready?" customer app, sales dashboard and technician view
 
-Status: v1.0 (24 Oct 2026). Team NoIdea, WATT THE HACK Munich, nuuEnergy challenge.
+Status: v1.1 (24 Oct 2026): adds the 4 result areas and the full parameter list from the teammate analysis. Team NoIdea, WATT THE HACK Munich, nuuEnergy challenge.
 Audience: the developer (human or Claude) building the front end. Read together with:
 - `docs/AGENT_BACKEND_SPEC.md`: the backend (orchestrator, MCP tools, HTTP API, ElevenLabs voice).
 - `app/`: the existing working web prototype (React + Vite + Tailwind). **Reuse its components and copy; do not
@@ -76,6 +76,27 @@ Out of scope: payments, booking calendars for the visit (the sales team calls), 
 - Conditional questions follow `get_next_questions` (e.g., radiator/pipe questions hidden for underfloor only).
 - Existing reference: `app/src/ui/Wizard.tsx` (3 steps) and `BookFlow.tsx` (pre-check + plans).
 
+### 4.3a Questions and fields (teammate parameter list)
+The full list (about 50 parameters in 7 groups: home and decision-making, building, current heating, distribution and
+pipework, hot water and household, installation feasibility, project and follow-up) is mapped in
+`docs/AGENT_BACKEND_SPEC.md` §4.6 to a **mode** per parameter. The app follows the same modes:
+- **ASK** (~9 questions, always): language, postcode, house type, year built, heated area, fuel + yearly amount (unit
+  picker), emitters (radiators / underfloor / wall / ceiling / mixed / other), people + does the boiler make hot water,
+  boiler age, renovation.
+- **ADAPT** (shown only when the backend says it matters): pipe system (with "unsure"), renovation measures and years,
+  other heat sources, unused areas, rooms heat evenly / comfort issues, units in building + approval needed (apartment
+  or renter), consumption includes hot water / hot-water system, PV or battery, chimney or oil tank to remove,
+  energy-certificate value, planned household changes, noise concerns.
+- **PHOTO/DOC** (upload task cards, never typed questions): meter cabinet, radiators or floor-heating manifold,
+  heating room, outdoor spot (+ distance to neighbour), access route, energy bill, energy certificate, equipment
+  records, floor plans.
+- **TECH** (not asked; shown in the briefing as "to check on site"): heater model and location, flow temperature,
+  hydraulic balancing, floors, indoor space, hot-water tank and usage, electrical connection details.
+- **SALES** (after the result, optional): owner / authorized representative / renter / unsure, timeframe, heater
+  working or urgent, decision-makers.
+- **CONTACT** (with consent): preferred contact method and details; explain why each is needed.
+Every question offers "I don't know" / "unsure". The app gets the list, wording and conditions from `GET /slots`.
+
 ### 4.4 Photo and document upload (in-app and via SMS link)
 - Task cards, each with a sample photo of "what we need" and a one-line why:
   meter cabinet (most important), radiator + pipes, outdoor spot (+ "metres to the neighbour's boundary" field and
@@ -95,20 +116,32 @@ Out of scope: payments, booking calendars for the visit (the sales team calls), 
 ### 4.6 Result screen (reuse `app/src/ui/Result.tsx` blocks)
 Order matters: answer first, details later.
 1. **Traffic light** (big, with text label, never colour alone) + confidence + one-sentence headline.
-2. **"In plain words"** paragraph (guarded AI text) with the engine's reasons available via "Why?".
-3. **What happens next** (from the outcome templates, backend `outcome`):
+2. **Four result areas** (from `packages/core/src/engine/areas.ts` → `resultAreas(building, assessment, hints)`), shown as
+   four cards in this order, each with a status badge (good / check / issue: icon + word, not colour only), the reason
+   and the next check:
+   - **Heat demand**: area, renovation, insulation, energy use.
+   - **Heating-system fit**: flow temperature, emitters, pipe layout, room comfort.
+   - **Installation feasibility**: indoor/outdoor space, electricity (meter cabinet), access, permissions.
+   - **Information confidence**: which answers are known, estimated or still need checking.
+   Example card text (fit): "Your home may need a closer heating-system review because you have radiators and the flow
+   temperature is unknown. Next: a technician should check the room-by-room heat demand and radiator sizes."
+   Rules the copy must respect: building age never rejects a home on its own; single-pipe means "closer review", not
+   "no"; 55 °C is a screening reference, not pass/fail; ownership, timeline and boiler age never change the technical
+   result.
+3. **"In plain words"** paragraph (guarded AI text) with the engine's reasons available via "Why?".
+4. **What happens next** (from the outcome templates, backend `outcome`):
    - Green / tier A: "Our planning team will call you as soon as possible to arrange the free visit."
    - Tier B: "A short technical phone call (about 30 minutes) is the next step."
    - Tier C: "Please check X / send a photo of Y; then we'll get in touch."
    - Red / D: honest "not a good fit right now", the path to green, guide download.
    - Out of area: "We can't send an expert to your area; here is your free first assessment."
-4. **Rough costs**: heat pump vs today per year; typical price range (gross, before subsidy); subsidy estimate with
+5. **Rough costs**: heat pump vs today per year; typical price range (gross, before subsidy); subsidy estimate with
    lines; "Apply for the subsidy before you order, or it is lost"; optional income calculator (stays on device,
    "prefer not to say" default).
-5. **What we can't tell yet** / **Known obstacles** / **Data to check** (three separate, plain lists).
-6. **Path to green** (steps a technician check could unlock) when not already green with high confidence.
-7. **What a technician will check** (meter cabinet first).
-8. "Show the details" (collapsed): heat-load methods, assumptions table with sources, the maths.
+6. **What we can't tell yet** / **Known obstacles** / **Data to check** (three separate, plain lists).
+7. **Path to green** (steps a technician check could unlock) when not already green with high confidence.
+8. **What a technician will check** (meter cabinet first).
+9. "Show the details" (collapsed): heat-load methods, assumptions table with sources, the maths.
 - Buttons: "Send me this result" (SMS/e-mail, with consent), "Speak to a person", "Start again".
 
 ### 4.7 Consent and contact screen
@@ -141,6 +174,11 @@ Order matters: answer first, details later.
   service-area postcodes, visit-credit toggle (off by default). Label: "placeholder, nuuEnergy to set".
 - **Outcome stats** (phase 2): predicted tier vs actual result table, to tune rules over time (still rule-based).
 - Fairness footer: "Scored only on building facts and the homeowner's own answers."
+
+## 5a. Sales lead detail additions (v1.1)
+- Show the **four result areas** at the top of the lead detail (same component as the customer result).
+- Show **permissions** (approval needed, apartment / units) and **removal work** (chimney, oil tank) as feasibility notes.
+- Provenance badge per fact: *said*, *estimated*, *bill*, *certificate*, *photo AI*, *location*.
 
 ## 6. Technician briefing (reuse `app/src/ui/Briefing.tsx`)
 One printable page (A4, print CSS): house facts, heat-load range + chosen estimate + why, suggested unit sizes
@@ -218,6 +256,11 @@ or computes amounts itself.
 - German and English complete; numbers formatted per locale.
 - Sales settings change updates expected value and tiers live.
 - Briefing prints on one A4 page for typical leads.
+
+## 12a. Shared components to build first (so app and dashboard stay consistent)
+`TrafficLight`, `ResultAreaCard` (status badge + reason + next check), `CostCard`, `SubsidyCard`, `FlagList`,
+`PathToGreenCard`, `AssumptionsTable`, `PhotoTaskCard`, `QuestionCard` (one question + "I don't know"),
+`NumberReadBack`, `ProgressSteps`, `ConsentPanel`, `HumanHandoffButton`.
 
 ## 13. Build order
 1. Shared UI package + routing + i18n skeleton (reuse `app/` components).

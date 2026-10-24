@@ -1,5 +1,6 @@
-import { DISAGREEMENT_TOLERANCE, IMPLAUSIBLY_LOW_W_PER_M2, INSULATION_HINT_W_PER_M2, TOO_HIGH_W_PER_M2 } from './constants';
+import { CERTIFICATE_TOLERANCE, DISAGREEMENT_TOLERANCE, IMPLAUSIBLY_LOW_W_PER_M2, INSULATION_HINT_W_PER_M2, TOO_HIGH_W_PER_M2 } from './constants';
 import { hasOtherHeatSource, methodGap } from './heatLoad';
+import { isSurfaceHeating } from './types';
 import type { Building, Flag, Flags, HeatLoad, PhotoFindings, PipeSystem, Radiators } from './types';
 
 const NO_OUTDOOR_SPOT = /no (space|room|spot|place) for (an |the )?outdoor|no garden|no outdoor/i;
@@ -13,7 +14,7 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
   const contradictions: Flag[] = [];
   const checks: Flag[] = [];
   const tips: string[] = [];
-  const hasRadiators = b.heat_distribution !== 'underfloor';
+  const hasRadiators = !isSurfaceHeating(b.heat_distribution);
   const year = b.construction_year;
   const area = b.floor_area_m2;
 
@@ -51,6 +52,9 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
   if (hasRadiators && (!b.radiator_info || RADIATOR_TYPE_UNKNOWN.test(b.radiator_info)) && !(photo?.radiator_type && photo.radiator_type !== 'unknown')) {
     unknowns.push({ title: 'Radiator type and size unknown', detail: 'Without Type 11/22/33 and sizes we cannot check whether the radiators still cover the load at 55 °C (they give about half their rated output).' });
   }
+  if (b.uneven_heating && hasRadiators) {
+    unknowns.push({ title: 'Rooms do not heat evenly', detail: 'Some radiators may be undersized or the system unbalanced. A technician checks radiator sizes and hydraulic balancing before planning 55 °C.', critical: true });
+  }
   if (b.flow_temperature_c == null && hasRadiators) {
     unknowns.push({ title: 'Current flow temperature unknown', detail: 'A simple test (turn the boiler down to 55 °C on a cold day) shows whether the rooms stay warm.' });
   }
@@ -83,6 +87,15 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
     contradictions.push({ title: 'Room count implausible for the floor area', detail: `${b.rooms} rooms in ${area} m² is only ${Math.round(area / b.rooms)} m² per room. Is the floor area or the room count wrong?`, critical: true });
   }
 
+  // Energy certificate vs real consumption: a cross-check only, it never replaces the bill.
+  if (b.certificate_kwh_m2a && b.annual_consumption_kwh && area) {
+    const billPerM2 = b.annual_consumption_kwh / area;
+    const gapCert = Math.abs(billPerM2 - b.certificate_kwh_m2a) / b.certificate_kwh_m2a;
+    if (gapCert > CERTIFICATE_TOLERANCE) {
+      contradictions.push({ title: 'Bill and energy certificate disagree', detail: `The bill implies ${Math.round(billPerM2)} kWh/m² per year, the certificate says ${Math.round(b.certificate_kwh_m2a)} kWh/m² (${Math.round(gapCert * 100)}% apart). Usage habits, a second heat source or an outdated certificate can explain it.`, critical: true });
+    }
+  }
+
   // Data confirmed on site: the numbers are real, so they are no longer contradictions.
   if (b.verified_on_site) contradictions.length = 0;
 
@@ -91,6 +104,8 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
   checks.push({ title: 'Exact heat load', detail: 'Room-by-room heat-load calculation (DIN EN 12831).' });
   checks.push({ title: 'Outdoor-unit location', detail: 'Space, distance to neighbours (noise) and condensate drainage.' });
   if (hasRadiators && (pipe !== 'two-pipe')) checks.push({ title: 'Pipe system', detail: pipe === 'single-pipe' ? 'Can end radiators be enlarged or the loop be converted?' : 'Single-pipe or two-pipe? Look at the pipe runs between radiators and in the boiler room.' });
+  if (b.heat_distribution === 'wall' || b.heat_distribution === 'ceiling') checks.push({ title: 'Surface-heating design temperature', detail: 'Confirm the wall/ceiling heating was designed for low flow temperatures (about 35 °C).' });
+  if (b.uneven_heating && hasRadiators) checks.push({ title: 'Hydraulic balancing', detail: 'Rooms heat unevenly: check radiator sizes and balancing.' });
   if (hasRadiators) checks.push({ title: 'Radiator sizes and flow-temperature test', detail: 'Do the radiators cover each room at 55 °C?' });
   if (VALVES_NEED_WORK.test(b.radiator_info ?? '')) checks.push({ title: 'Valve replacement and hydraulic balancing', detail: b.radiator_info ?? '' });
   if (contradictions.length) checks.push({ title: 'Verify the input data', detail: 'Confirm the yearly consumption, heated area and room count on site.' });

@@ -18,6 +18,8 @@ export const TOO_HIGH_W_PER_M2 = 120;
 export const IMPLAUSIBLY_LOW_W_PER_M2 = 25;
 /** When the bill is distrusted, size at the low end of the area band plus this margin. */
 export const LOW_END_MARGIN_W_PER_M2 = 10;
+/** Bill (kWh/m²) and energy certificate disagree beyond this share → contradiction (cross-check only). */
+export const CERTIFICATE_TOLERANCE = 0.4;
 /** Methods disagree if B lies this far (relative) outside the method-A range. */
 export const DISAGREEMENT_TOLERANCE = 0.3;
 /** Radiator houses above this specific load probably need > 55 °C flow temperature. */
@@ -45,6 +47,8 @@ export const ASSUMPTIONS: { label: string; value: string; source: string }[] = [
   { label: 'Insulation hint above', value: `${INSULATION_HINT_W_PER_M2} W/m²`, source: GUARDRAILS },
   { label: 'Load too high above', value: `${TOO_HIGH_W_PER_M2} W/m²`, source: OURS },
   { label: 'Bill implausibly low below', value: `${IMPLAUSIBLY_LOW_W_PER_M2} W/m²`, source: OURS },
+  { label: 'Bill vs energy certificate beyond', value: `${CERTIFICATE_TOLERANCE * 100}%`, source: OURS },
+  { label: 'Wall/ceiling heating', value: 'treated like underfloor (JAZ 4.0), technician confirms', source: OURS },
   { label: 'Methods disagree beyond', value: `${DISAGREEMENT_TOLERANCE * 100}%`, source: OURS },
   { label: 'Radiators likely > 55 °C above', value: `${LIKELY_ABOVE_55_W_PER_M2} W/m²`, source: OURS },
   { label: 'Photo AI minimum confidence', value: `${PHOTO_MIN_CONFIDENCE * 100}%`, source: OURS },

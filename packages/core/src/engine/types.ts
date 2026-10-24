@@ -1,6 +1,9 @@
 export type Renovation = 'unrenovated' | 'partially' | 'fully' | null;
-export type Distribution = 'radiators' | 'underfloor' | 'mixed';
-export type Carrier = 'gas' | 'oil' | 'district' | 'electric';
+export type Distribution = 'radiators' | 'underfloor' | 'mixed' | 'wall' | 'ceiling';
+/** Low-temperature surface heating (underfloor, wall, ceiling): no radiators to check. */
+export const isSurfaceHeating = (d: Distribution | null) => d === 'underfloor' || d === 'wall' || d === 'ceiling';
+export type HouseType = 'detached' | 'semi' | 'terraced' | 'apartment' | 'other';
+export type Carrier = 'gas' | 'oil' | 'district' | 'electric' | 'biomass' | 'other';
 export type PipeSystem = 'two-pipe' | 'single-pipe' | 'unknown';
 export type Verdict = 'green' | 'yellow' | 'red';
 export type Confidence = 'high' | 'medium' | 'low';
@@ -22,6 +25,15 @@ export type Building = {
   rooms: number | null;
   building_notes?: string;
   location?: string;
+  // Agent / teammate parameters (v0.2). All optional; unknown = not documented.
+  house_type?: HouseType | null;
+  units_in_building?: number | null;
+  /** Landlord, owners' association (WEG) or co-owners must approve. */
+  approval_needed?: boolean | null;
+  /** Energy certificate demand, kWh per m² and year. Cross-check only; never replaces the bill. */
+  certificate_kwh_m2a?: number | null;
+  /** Rooms do not heat evenly / comfort complaints. */
+  uneven_heating?: boolean | null;
   /** Set only by the path-to-green simulation: bill, area and rooms confirmed on site. */
   verified_on_site?: boolean;
   reference_heating_load_kw?: number;
