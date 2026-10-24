@@ -190,3 +190,34 @@ describe('European languages', () => {
     expect(guardReply(s, 'Votre résultat est jaune.').ok).toBe(true);
   });
 });
+
+describe('ElevenLabs bridge: session matching and language switch', () => {
+  const store = new MemoryStore();
+  const server = buildServer(store, config, new RuleModel());
+  let base = '';
+  beforeAll(async () => { await new Promise<void>((r) => server.listen(0, r)); base = `http://localhost:${(server.address() as AddressInfo).port}`; });
+  afterAll(() => server.close());
+  const SYS = { role: 'system', content: 'Agent character description: conversation_id: {{system__conversation_id}}\nlanguage: auto' };
+  const LANG_TOOL = { type: 'function', function: { name: 'language_detection', parameters: { type: 'object', properties: { reason: { type: 'string' }, language: { type: 'string' } } } } };
+  const call = (messages: unknown[]) => fetch(`${base}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stream: true, messages, tools: [LANG_TOOL] }),
+  }).then((r) => r.text());
+  const toolCalls = (sse: string) => sse.split('\n').filter((l) => l.startsWith('data: {')).flatMap((l) => JSON.parse(l.slice(6)).choices[0].delta.tool_calls ?? []);
+
+  it('keeps one session when the conversation id is not substituted (matches by history)', async () => {
+    const greet = { role: 'assistant', content: 'Guten Tag…' };
+    const u1 = { role: 'user', content: 'Bonjour, oui, nous pouvons commencer, je parle français' };
+    const sse1 = await call([SYS, greet, u1]);
+    const calls = toolCalls(sse1);
+    expect(calls[0]?.function?.name).toBe('language_detection');
+    expect(JSON.parse(calls[0].function.arguments).language).toBe('fr');
+    // ElevenLabs runs the tool and comes back with the tool result: we must not re-run the turn.
+    const follow = await call([SYS, greet, u1, { role: 'assistant', content: null, tool_calls: [calls[0]] }, { role: 'tool', tool_call_id: calls[0].id, content: 'ok' }]);
+    expect(follow).toMatch(/\[DONE\]/);
+    await call([SYS, greet, u1, { role: 'assistant', content: 'Quel est le code postal ?' }, { role: 'user', content: '85221' }]);
+    const sessions = store.list().filter((s) => s.id.startsWith('el-'));
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].profile.location?.postcode).toBe('85221');
+    expect(sessions[0].speak).toBe('fr');
+  });
+});

@@ -32,8 +32,19 @@ const config = {
         prompt: 'conversation_id: {{system__conversation_id}}\nlanguage: auto\nYou are a voice front end. All answers come from the custom LLM; do not add content.',
         llm: 'custom-llm',
         custom_llm: { url: `${PUBLIC}/v1`, model_id: 'heatpump-orchestrator', api_key: { secret_id: secret.secret_id } },
+        // Our turns take ~5–8 s: wait the maximum and never fall back to another model (it would bypass our guard).
+        cascade_timeout_seconds: 15,
+        backup_llm_config: { preference: 'disabled' },
+        // Our orchestrator calls this when the caller switches language, so ASR and voice follow.
+        built_in_tools: { language_detection: { type: 'system', name: 'language_detection', description: '', params: { system_tool_type: 'language_detection' } } },
       },
     },
+    language_presets: Object.fromEntries(Object.entries({
+      en: "Hello, this is nuuEnergy's assistant. Shall we start?", fr: "Bonjour, ici l'assistant de nuuEnergy. On commence ?",
+      it: "Buongiorno, sono l'assistente di nuuEnergy. Iniziamo?", es: 'Hola, soy el asistente de nuuEnergy. ¿Empezamos?',
+      nl: 'Hallo, dit is de assistent van nuuEnergy. Zullen we beginnen?', pl: 'Dzień dobry, tu asystent nuuEnergy. Zaczynamy?',
+      pt: 'Olá, aqui é o assistente da nuuEnergy. Vamos começar?',
+    }).map(([k, v]) => [k, { overrides: { agent: { first_message: v, language: k } } }])),
     // Multilingual, low-latency model: the same voice speaks German and English.
     tts: { voice_id: VOICE, model_id: 'eleven_flash_v2_5', stability: 0.6, speed: 0.92 },
     // Patience for older callers: wait longer before deciding the caller has finished.
