@@ -22,6 +22,8 @@ export type Session = {
   updatedAt: string;
   channel: 'chat' | 'voice';
   lang: Lang;
+  /** Language actually spoken (de, en, fr, it, es, nl, pl, pt); fixed texts use `lang` and are translated by the model. */
+  speak?: string;
   profile: Profile;
   flags: {
     started: boolean;

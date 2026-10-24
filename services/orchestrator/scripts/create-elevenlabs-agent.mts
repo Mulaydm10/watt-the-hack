@@ -20,7 +20,7 @@ const api = async (path: string, method: string, body?: unknown) => {
 // Token for our endpoint, stored as an ElevenLabs workspace secret (never in the agent config itself).
 const secret = await api('/v1/convai/secrets', 'POST', { type: 'new', name: `heatpump-llm-token-${Date.now()}`, value: TOKEN });
 
-const greeting = "Guten Tag, hier ist der Assistent von nuuEnergy. Hello, this is nuuEnergy's assistant. Sie können Deutsch oder Englisch mit mir sprechen, you can speak German or English. In etwa 5 bis 10 Minuten prüfen wir kostenlos und unverbindlich, ob eine Wärmepumpe zu Ihrem Haus passt. nuuEnergy fragt nie nach Bankdaten oder Passwörtern. Sollen wir anfangen? Shall we start?";
+const greeting = "Guten Tag, hier ist der Assistent von nuuEnergy. Hello, this is nuuEnergy's assistant. Sie können Deutsch, Englisch oder eine andere europäische Sprache mit mir sprechen, you can speak German, English or another European language. In etwa 5 bis 10 Minuten prüfen wir kostenlos und unverbindlich, ob eine Wärmepumpe zu Ihrem Haus passt. nuuEnergy fragt nie nach Bankdaten oder Passwörtern. Sollen wir anfangen? Shall we start?";
 
 const config = {
   name: 'nuuEnergy Heat Pump Ready (voice)',

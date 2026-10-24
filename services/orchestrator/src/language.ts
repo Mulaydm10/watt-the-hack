@@ -1,28 +1,57 @@
-// Follow the caller's language: if they speak German or English, the session switches to it (both ways).
-// Deterministic word-count heuristic; needs a clear signal so single words like "ja"/"ok" don't flip it by accident.
+// Follow the caller's language (German, English, French, Italian, Spanish, Dutch, Polish, Portuguese), both ways,
+// mid-call. Fixed texts exist in de/en (s.lang); for other languages the model translates them faithfully (s.speak).
+// Deterministic word-count heuristic; needs a clear signal so a single "ok"/"ja" never flips the language.
 import { setSlot, type Session } from '@hpr/agent';
 
-const DE = /\b(ich|wir|ja|nein|das|ist|und|nicht|bitte|danke|gerne|haben|haus|heizung|wohnung|weiß|keine|ahnung|genau|ungefähr|jahr|liter|baujahr|sprechen|deutsch|guten|tag|hallo)\b/gi;
-const EN = /\b(i|we|yes|no|the|is|and|not|please|thanks|have|house|heating|home|know|about|year|litres|liters|built|speak|english|hello|sure|okay)\b/gi;
+export const LANGS = {
+  de: { name: 'German', words: ['ich', 'wir', 'ja', 'nein', 'das', 'ist', 'und', 'nicht', 'bitte', 'danke', 'gerne', 'haben', 'haus', 'heizung', 'wohnung', 'weiß', 'keine', 'genau', 'ungefähr', 'jahr', 'liter', 'sprechen', 'deutsch', 'guten', 'hallo'] },
+  en: { name: 'English', words: ['i', 'we', 'yes', 'no', 'the', 'is', 'and', 'not', 'please', 'thanks', 'have', 'house', 'heating', 'home', 'know', 'about', 'year', 'litres', 'built', 'speak', 'english', 'hello', 'sure', 'okay'] },
+  fr: { name: 'French', words: ['je', 'nous', 'oui', 'non', 'le', 'la', 'est', 'et', 'pas', "s'il", 'merci', 'maison', 'chauffage', 'avons', 'ai', 'sais', 'environ', 'année', 'parler', 'français', 'bonjour', 'avec', 'une'] },
+  it: { name: 'Italian', words: ['io', 'noi', 'sì', 'si', 'no', 'il', 'la', 'è', 'e', 'non', 'grazie', 'casa', 'riscaldamento', 'abbiamo', 'ho', 'so', 'circa', 'anno', 'parlare', 'italiano', 'buongiorno', 'con', 'una'] },
+  es: { name: 'Spanish', words: ['yo', 'nosotros', 'sí', 'no', 'el', 'la', 'es', 'y', 'gracias', 'casa', 'calefacción', 'tenemos', 'tengo', 'sé', 'aproximadamente', 'año', 'hablar', 'español', 'hola', 'con', 'una', 'por', 'favor'] },
+  nl: { name: 'Dutch', words: ['ik', 'wij', 'we', 'ja', 'nee', 'het', 'de', 'is', 'en', 'niet', 'alstublieft', 'dank', 'huis', 'verwarming', 'hebben', 'weet', 'ongeveer', 'jaar', 'spreken', 'nederlands', 'hallo', 'met', 'een'] },
+  pl: { name: 'Polish', words: ['ja', 'my', 'tak', 'nie', 'jest', 'i', 'proszę', 'dziękuję', 'dom', 'ogrzewanie', 'mamy', 'mam', 'wiem', 'około', 'rok', 'mówić', 'polsku', 'dzień', 'dobry', 'z', 'jestem'] },
+  pt: { name: 'Portuguese', words: ['eu', 'nós', 'sim', 'não', 'o', 'a', 'é', 'e', 'obrigado', 'obrigada', 'casa', 'aquecimento', 'temos', 'tenho', 'sei', 'cerca', 'ano', 'falar', 'português', 'olá', 'com', 'uma'] },
+} as const;
+export type SpokenLang = keyof typeof LANGS;
 
-export function detectLanguage(text: string): 'de' | 'en' | null {
-  if (/\b(auf deutsch|deutsch bitte|lieber deutsch|german please|in german)\b/i.test(text)) return 'de';
-  if (/\b(in english|english please|auf englisch|lieber englisch)\b/i.test(text)) return 'en';
-  const de = (text.match(DE) ?? []).length + (/[äöüß]/i.test(text) ? 1 : 0);
-  const en = (text.match(EN) ?? []).length;
-  if (de >= 2 && de > en * 2) return 'de';
-  if (en >= 2 && en > de * 2) return 'en';
-  return null;
+const tokenize = (t: string) => t.toLowerCase().match(/[\p{L}']+/gu) ?? [];
+
+const EXPLICIT: [RegExp, SpokenLang][] = [
+  [/\b(auf deutsch|deutsch bitte|in german)\b/i, 'de'], [/\b(in english|english please|auf englisch)\b/i, 'en'],
+  [/\b(en français|in french|français)\b/i, 'fr'], [/\b(in italiano|in italian|italiano)\b/i, 'it'],
+  [/\b(en español|in spanish|español)\b/i, 'es'], [/\b(in het nederlands|in dutch|nederlands)\b/i, 'nl'],
+  [/\b(po polsku|in polish)\b/i, 'pl'], [/\b(em português|in portuguese|português)\b/i, 'pt'],
+];
+
+export function detectLanguage(text: string): SpokenLang | null {
+  for (const [re, l] of EXPLICIT) if (re.test(text)) return l;
+  const toks = tokenize(text);
+  if (toks.length === 0) return null;
+  const scores = (Object.keys(LANGS) as SpokenLang[]).map((l) => {
+    let n = toks.filter((t) => (LANGS[l].words as readonly string[]).includes(t)).length;
+    if (l === 'de' && /[äöüß]/i.test(text)) n += 1;
+    if (l === 'pl' && /[ąćęłńśźż]/i.test(text)) n += 2;
+    if (l === 'pt' && /[ãõç]/i.test(text)) n += 1;
+    if (l === 'es' && /[ñ¿¡]/i.test(text)) n += 2;
+    return [l, n] as const;
+  }).sort((a, b) => b[1] - a[1]);
+  const [[best, top], [, second]] = scores;
+  return top >= 2 && top >= second * 2 ? best : null;
 }
 
-/** Switch the session language if the caller clearly speaks the other one. Returns true when it changed. */
+/** Switch the session language if the caller clearly speaks another one. Returns true when it changed. */
 export function followLanguage(s: Session, text: string): boolean {
   const l = detectLanguage(text);
-  if (!l || l === s.lang) {
-    if (l && !s.profile.slots.lang) setSlot(s.profile, 'lang', { value: l });
+  const current = (s.speak ?? s.lang) as SpokenLang;
+  if (!l || l === current) {
+    if (l && !s.profile.slots.lang) setSlot(s.profile, 'lang', { value: l === 'de' ? 'de' : 'en' });
     return false;
   }
-  s.lang = l;
-  setSlot(s.profile, 'lang', { value: l });
+  s.speak = l;
+  s.lang = l === 'de' ? 'de' : 'en'; // fixed texts: German for German, English as the base for every other language
+  setSlot(s.profile, 'lang', { value: s.lang });
   return true;
 }
+
+export const languageName = (s: Session) => LANGS[(s.speak ?? s.lang) as SpokenLang]?.name ?? 'German';

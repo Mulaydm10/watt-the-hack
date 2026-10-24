@@ -160,11 +160,33 @@ describe('dynamic language', () => {
     const s = newSession('lang', 'voice', 'en');
     const model = new RuleModel();
     const greet = startConversation(s);
-    expect(greet).toMatch(/Deutsch oder Englisch.*German or English/s);
+    expect(greet).toMatch(/europäische Sprache.*another European language/s);
     await handleTurn(s, 'Ja, gerne, wir können anfangen', model, config);
     expect(s.lang).toBe('de');
     const r = await handleTurn(s, 'Sorry, can we speak English please, I know it better', model, config);
     expect(s.lang).toBe('en');
     expect(r.reply).toMatch(/[A-Za-z]/);
+  });
+});
+
+describe('European languages', () => {
+  it('detects fr, it, es, nl, pl, pt', async () => {
+    const { detectLanguage } = await import('../src/language');
+    expect(detectLanguage('Oui, nous avons une maison avec chauffage au fioul')).toBe('fr');
+    expect(detectLanguage('Sì, abbiamo una casa con riscaldamento a gasolio')).toBe('it');
+    expect(detectLanguage('Sí, tenemos una casa con calefacción de gasóleo')).toBe('es');
+    expect(detectLanguage('Ja, we hebben een huis met verwarming op olie')).toBe('nl');
+    expect(detectLanguage('Tak, mamy dom z ogrzewaniem olejowym')).toBe('pl');
+    expect(detectLanguage('Sim, temos uma casa com aquecimento a gasóleo')).toBe('pt');
+  });
+  it('switches to French, keeps English fixed texts underneath, and the guard knows "vert"', async () => {
+    const s = newSession('fr', 'voice', 'de');
+    startConversation(s);
+    await handleTurn(s, 'Oui, merci, nous pouvons commencer, je parle français', new RuleModel(), config);
+    expect(s.speak).toBe('fr');
+    expect(s.lang).toBe('en');
+    s.toolLog.push({ at: '', tool: 'assess_building', args: {}, result: { verdict: 'yellow' }, ms: 0 });
+    expect(guardReply(s, 'Votre résultat est vert.').ok).toBe(false);
+    expect(guardReply(s, 'Votre résultat est jaune.').ok).toBe(true);
   });
 });

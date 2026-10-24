@@ -28,10 +28,11 @@ function allowedNumbers(s: Session, extraText: string): Set<number> {
   return allowed;
 }
 
+// Traffic-light words in every supported language (de, en, fr, it, es, nl, pl, pt).
 const VERDICT_WORDS: Record<string, RegExp> = {
-  green: /\b(green|grün|gruen)\b/i,
-  yellow: /\b(yellow|gelb)\b/i,
-  red: /\b(red|rot)\b/i,
+  green: /(?<![\p{L}])(green|grün|gruen|vert|verte|verde|groen|zielon\p{L}*)(?![\p{L}])/iu,
+  yellow: /(?<![\p{L}])(yellow|gelb|jaune|giallo|gialla|amarillo|amarilla|geel|żółt\p{L}*|amarelo|amarela)(?![\p{L}])/iu,
+  red: /(?<![\p{L}])(red|rot|rouge|rosso|rossa|rojo|roja|rood|czerwon\p{L}*|vermelho|vermelha)(?![\p{L}])/iu,
 };
 const PRESSURE = /\b(only today|last chance|act now|limited time|nur heute|letzte chance|sofort zugreifen)\b/i;
 const SENSITIVE_ASK = /\b(iban|bank (details|account)|credit card|card number|password|passwort|kontonummer|kreditkarte|date of birth|geburtsdatum|how old are you|wie alt sind sie|your income|ihr einkommen)\b/i;

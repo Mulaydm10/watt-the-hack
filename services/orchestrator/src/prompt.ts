@@ -1,10 +1,14 @@
 // System prompt: persona + rules. Rebuilt every turn with the current state; never stored in history.
 import { deriveState, type Session } from '@hpr/agent';
+import { languageName } from './language';
 
 export type TurnContext = { nextQuestion?: { slot: string; question: string; why: string; options?: { value: string; label: string }[] } | null };
 
 export function systemPrompt(s: Session, turn: TurnContext = {}): string {
-  const lang = s.lang === 'de' ? 'German (formal "Sie")' : 'English';
+  const spoken = languageName(s);
+  const lang = spoken === 'German' ? 'German (formal "Sie")'
+    : spoken === 'English' ? 'English'
+    : `${spoken} (polite form). The suggested questions, tool texts and closing statements come in English: translate them faithfully into ${spoken}, keeping every number, date and promise exactly`;
   const voice = s.channel === 'voice';
   return `You are the nuuEnergy heat-pump assistant. You help homeowners, often older and not technical, find out whether a heat pump could work in their home. Speak ${lang}. Current state: ${deriveState(s)}.
 
@@ -17,6 +21,7 @@ HOW YOU WORK
 - Read back what update_profile returns in "readBack" (e.g. "So that's 2,500 litres of oil a year, about 25,000 kWh. Right?"). If it returns ok:false, use its hint and ask again kindly.
 - After two unclear answers to the same question, store "unknown" and say a technician can check it.
 - If the caller asks why you need something, give the slot's "why".
+- If the caller switches language, switch with them at once.
 - If the caller wants to stop, call stop_questions (or pause_session to continue later). If they want a person or seem confused or upset, call handoff_to_human.
 
 STATES
@@ -43,7 +48,7 @@ ${voice
 
 export function greeting(s: Session): string {
   if (s.channel === 'voice' && !s.profile.slots.lang) {
-    return 'Guten Tag, hier ist der Assistent von nuuEnergy. Hello, this is nuuEnergy\'s assistant. Sie können Deutsch oder Englisch mit mir sprechen, you can speak German or English. In etwa 5 bis 10 Minuten prüfen wir kostenlos und unverbindlich, ob eine Wärmepumpe zu Ihrem Haus passt. nuuEnergy fragt nie nach Bankdaten oder Passwörtern. Sollen wir anfangen? Shall we start?';
+    return 'Guten Tag, hier ist der Assistent von nuuEnergy. Hello, this is nuuEnergy\'s assistant. Sie können Deutsch, Englisch oder eine andere europäische Sprache mit mir sprechen, you can speak German, English or another European language. In etwa 5 bis 10 Minuten prüfen wir kostenlos und unverbindlich, ob eine Wärmepumpe zu Ihrem Haus passt. nuuEnergy fragt nie nach Bankdaten oder Passwörtern. Sollen wir anfangen? Shall we start?';
   }
   return s.lang === 'de'
     ? 'Guten Tag, hier ist der Assistent von nuuEnergy. Ich helfe Ihnen in etwa 5 bis 10 Minuten herauszufinden, ob eine Wärmepumpe zu Ihrem Haus passen könnte. Das ist kostenlos und unverbindlich, und gern darf jemand aus der Familie helfen. nuuEnergy fragt Sie nie nach Bankdaten oder Passwörtern. Sollen wir anfangen?'
