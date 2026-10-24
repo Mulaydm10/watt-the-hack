@@ -45,7 +45,7 @@ describe('robust against bad input', () => {
 
   it('missing data alone never gives red', () => {
     for (const raw of [{}, { construction_year: 1955 }, { floor_area_m2: 300 }]) {
-      expect(assess(raw as Building).verdict).not.toBe('red');
+      expect(assess(raw as unknown as Building).verdict).not.toBe('red');
     }
   });
 
