@@ -16,6 +16,21 @@ for more info), so fewer technician visits fail on site. Missing data never make
 | [`docs/REFINED_APPROACH.md`](docs/REFINED_APPROACH.md) | The plan for the last hours: concept, ranked build list with lanes, 3-minute demo script, risks, data-source tests (incl. ETHOS.BUILDA) |
 | [`app/README.md`](app/README.md) | How the engine and the app work, assumptions and limits, the sales side |
 
+## Live system (demo)
+
+| What | Where | Notes |
+|---|---|---|
+| Voice agent (ElevenLabs) | https://elevenlabs.io/app/talk-to?agent_id=agent_3601m5q14gwxf6ya187pqkh79t9z | Female voice (Sarah), opens in German and English, follows the caller in de/en/fr/it/es/nl/pl/pt; one question at a time; all numbers and the verdict come from the engine through tools |
+| Sales: live leads | web app → **Live leads** (`/#/live`), e.g. http://100.80.210.100:5173/#/live | Real leads from the voice agent and chat: traffic light, next step (A–D) with reasons, the four result areas, contact (only with consent), what was promised, status + notes, printable briefing. Sign in with the sales token (`SALES_TOKEN` in `services/.env` on the Mac) |
+| Assistant API | https://dhruvs-mac-mini.tailaf7ebe.ts.net (public, Tailscale Funnel), `http://100.80.210.100:8787` (tailnet) | Homeowner endpoints for the phone app; contract in [`docs/APP_CLAUDE_PROMPT.md`](docs/APP_CLAUDE_PROMPT.md). Lead endpoints need the sales token |
+| MCP tools | `http://100.80.210.100:8788/mcp` | The same tools for any MCP client |
+
+How a call flows: caller → ElevenLabs (speech, voice) → our orchestrator as its custom LLM (Astra `gpt-6-astra` +
+tools + a guard that blocks invented numbers or a changed verdict) → result and dated callback promise to the caller →
+with consent, a sales report (JSON + summary) that appears in **Live leads**. Three demo leads (B-02, B-04, B-05 as
+Peter, Helga and Anna, marked "demo") are seeded with `npx tsx services/orchestrator/scripts/seed-demo-leads.mts`.
+The public Funnel address is for the demo only: turn it off afterwards with `tailscale funnel --https=443 off` on the Mac.
+
 ## Run it
 
 ```bash
@@ -37,8 +52,9 @@ Known issues (24 Oct, 15:00):
   "Cannot find module ../lightningcss.<platform>.node", delete `node_modules` and `package-lock.json`, run
   `npm install` again, and don't commit the regenerated lockfile.
 - `npm test` ends with an error from the `app` workspace ("No test files found"): its tests moved to `packages/core`.
-  At commit `009214e` all real tests pass: 80 in `packages/core`, 21 in `packages/agent`, 3 in `services/mcp-tools`,
-  13 in `services/orchestrator` (7 live-AI tests skipped without a key).
+  At commit `7b8fb4c` all real tests pass: 80 in `packages/core`, 21 in `packages/agent`, 3 in `services/mcp-tools`,
+  17 in `services/orchestrator` (live-AI tests skipped without a key). Live persona runs with Astra: B-04 yellow
+  9.5 kW and B-02 green 9.9 kW, 0 guard fallbacks, about 6.8 s per turn.
 
 ## Results for the 5 buildings
 
@@ -59,11 +75,11 @@ All numbers come from the deterministic engine and the challenge's fixed guardra
 
 | Path | What |
 |---|---|
-| `app/` | Vite + React UI: homeowner check and result, sales dashboard, expert-check flow, technician briefing |
+| `app/` | Vite + React UI: homeowner check and result, sales dashboard (demo houses), **Live leads** dashboard (real backend leads), expert-check flow, technician briefing |
 | `packages/core/` | Engine, sales logic, AI calls, building data. Every number and verdict comes from here |
-| `packages/agent/` | Conversation slots, profile, state machine, sales report. Tested; not used by the UI yet |
-| `services/mcp-tools/` | MCP server that exposes the engine as tools. Tested; not used by the UI yet |
-| `services/orchestrator/` | Voice/chat assistant backend: Astra tool loop with a number/verdict guard, HTTP API, ElevenLabs bridge. Tested; not used by the web app yet. See [`services/README.md`](services/README.md) |
+| `packages/agent/` | Conversation slots (ASK/ADAPT/PHOTO/TECH/SALES/CONTACT, de/en), profile with provenance, next-question logic, state machine, dynamic customer promises, sales report (file, e-mail, webhook), tools. Used by the orchestrator and MCP server |
+| `services/mcp-tools/` | MCP server that exposes the same tools (stdio or HTTP) |
+| `services/orchestrator/` | Voice/chat assistant backend: Astra tool loop with a number/verdict guard, multi-language following, HTTP API, ElevenLabs custom-LLM bridge, token-protected lead API behind **Live leads**. See [`services/README.md`](services/README.md) |
 | `kit/` | Official challenge pages (`kit/docs/`), the 5 buildings (`kit/data/`), installer-labelled pipe photos (`kit/photos/`) |
 | `docs/` | Refined approach, app spec, agent backend spec, pitch outline |
 | `notes/` | `workflow.md` (append-only work log), `challenge.md` and `ai_onboarding_prompt.md` (older, partly out of date) |
