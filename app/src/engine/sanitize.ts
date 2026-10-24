@@ -36,6 +36,7 @@ export function sanitize(raw: Partial<Record<keyof Building, unknown>>): Buildin
     rooms: num(raw.rooms, 1, 200),
     building_notes: str(raw.building_notes),
     location: str(raw.location),
+    verified_on_site: raw.verified_on_site === true || undefined,
     reference_heating_load_kw: num(raw.reference_heating_load_kw, 0, 1000) ?? undefined,
     expected_verdict: oneOf(raw.expected_verdict, ['green', 'yellow', 'red'] as const) ?? undefined,
   };

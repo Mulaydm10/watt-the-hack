@@ -22,6 +22,8 @@ export type Building = {
   rooms: number | null;
   building_notes?: string;
   location?: string;
+  /** Set only by the path-to-green simulation: bill, area and rooms confirmed on site. */
+  verified_on_site?: boolean;
   reference_heating_load_kw?: number;
   expected_verdict?: Verdict;
 };

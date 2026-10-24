@@ -83,6 +83,9 @@ export function flags(b: Building, h: HeatLoad, r: Radiators, pipe: PipeSystem, 
     contradictions.push({ title: 'Room count implausible for the floor area', detail: `${b.rooms} rooms in ${area} m² is only ${Math.round(area / b.rooms)} m² per room. Is the floor area or the room count wrong?`, critical: true });
   }
 
+  // Data confirmed on site: the numbers are real, so they are no longer contradictions.
+  if (b.verified_on_site) contradictions.length = 0;
+
   // ---- Technician checklist: always, then case-specific ----
   checks.push({ title: 'Meter cabinet / electrical connection', detail: 'Every grid operator has its own rules. It must always be checked and often needs an upgrade, which can raise the total price a lot. Plan for it.', critical: true });
   checks.push({ title: 'Exact heat load', detail: 'Room-by-room heat-load calculation (DIN EN 12831).' });

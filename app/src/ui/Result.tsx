@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { explainPlainly } from '../ai/explain';
 import { hasLlmKey, providerName } from '../ai/provider';
 import { ASSUMPTIONS } from '../engine/constants';
+import { pathToGreen } from '../engine/pathToGreen';
 import type { Assessment, Building, Flag } from '../engine/types';
 
 const LIGHT = {
@@ -62,6 +63,41 @@ function PlainLanguage({ a }: { a: Assessment }) {
   );
 }
 
+const EFFORT = { check: 'bg-slate-100 text-slate-600', 'small work': 'bg-amber-100 text-amber-800', 'bigger work': 'bg-rose-100 text-rose-700' };
+
+function PathToGreenCard({ a, b }: { a: Assessment; b: Building }) {
+  if (a.verdict === 'green' && a.confidence === 'high') return null;
+  const p = pathToGreen(b);
+  return (
+    <Card title={a.verdict === 'green' ? 'Path to high confidence' : 'Path to green'}>
+      <p className="mb-3 text-sm text-slate-500">If each technician check comes back positive, the same engine gives:</p>
+      <ol className="space-y-2">
+        <li className="flex items-center gap-3 text-sm text-slate-500">
+          <span className={`h-3 w-3 shrink-0 rounded-full ${LIGHT[a.verdict].dot}`} /> Today: {a.verdict}, {a.confidence} confidence
+        </li>
+        {p.steps.map((s, i) => (
+          <li key={s.check} className="flex items-start gap-3">
+            <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${LIGHT[s.verdict].dot}`} />
+            <div className="flex-1">
+              <p className="font-medium text-slate-800">{i + 1}. {s.check} <span className={`ml-1 rounded px-1.5 text-xs ${EFFORT[s.effort]}`}>{s.effort}</span></p>
+              <p className="text-sm text-slate-600">If: {s.outcome} → <b>{s.verdict}, {s.confidence} confidence</b></p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {p.reachesGreenHigh
+        ? <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">These {p.steps.length} step{p.steps.length === 1 ? '' : 's'} would make this a <b>green with high confidence</b>.</p>
+        : (
+          <div className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="font-semibold">Even with every check positive, it stays {p.steps[p.steps.length - 1]?.verdict ?? a.verdict}:</p>
+            <ul className="list-disc pl-5">{p.blockers.map((x) => <li key={x}>{x}</li>)}</ul>
+          </div>
+        )}
+      <p className="mt-2 text-xs text-slate-400">A simulation, not a promise: the real answers come from the on-site checks.</p>
+    </Card>
+  );
+}
+
 export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: () => void }) {
   const [maths, setMaths] = useState(false);
   const L = LIGHT[a.verdict];
@@ -87,6 +123,8 @@ export function Result({ a, b, onBack }: { a: Assessment; b: Building; onBack: (
           {b.building_id && <p className="mt-2 text-xs text-slate-400">{b.building_id} · {b.location}</p>}
         </div>
       </section>
+
+      <PathToGreenCard a={a} b={b} />
 
       <PlainLanguage key={b.building_id ?? 'custom'} a={a} />
 
