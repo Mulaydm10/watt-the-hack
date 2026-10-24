@@ -7,3 +7,4 @@ export * from './outcomes';
 export * from './report';
 export * from './store';
 export * from './tools';
+export * from './geocode';

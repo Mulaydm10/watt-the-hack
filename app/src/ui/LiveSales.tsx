@@ -14,7 +14,7 @@ const store = {
 type Row = {
   lead_id: string; created_at: string; channel: string; language: string; area: string | null; region: string | null; service_area: string | null;
   verdict: Verdict; confidence: string; heat_load_kw: number | null; tier: string; decision: string; top_reason: string | null;
-  expected_value_eur: number; pre_check_pct: number; contact: { name: string | null; phone: string | null; preferred_time: string | null } | null;
+  expected_value_eur: number; pre_check_pct: number; contact: { name: string | null; phone: string | null; preferred_time: string | null; address?: string | null; geo?: { lat: number; lon: number; display: string } | null } | null;
   promised: string; status: string; status_updated_at: string | null;
 };
 type Area = { key: string; title: string; status: 'good' | 'check' | 'issue'; reason: string; nextCheck: string };
@@ -79,7 +79,7 @@ export function LiveSales() {
   useEffect(() => { if (token) { load(); const t = setInterval(load, 10_000); return () => clearInterval(t); } }, [token, load]);
 
   const shown = useMemo(() => rows.filter((r) => filter === 'all' || r.tier === filter || r.status === filter), [rows, filter]);
-  const mapLeads = useMemo(() => shown.map((r) => ({ id: r.lead_id, area: r.area, verdict: r.verdict, label: r.decision })), [shown]);
+  const mapLeads = useMemo(() => shown.map((r) => ({ id: r.lead_id, area: r.area, verdict: r.verdict, label: r.decision, exact: r.contact?.geo ?? null })), [shown]);
   const kpi = useMemo(() => ({
     total: rows.length,
     visits: rows.filter((r) => r.tier === 'A' || r.tier === 'B').length,
@@ -143,7 +143,7 @@ export function LiveSales() {
         <div className="relative min-h-[420px] min-w-0" style={{ animation: 'hpr-rise 1s .15s cubic-bezier(.2,.7,.2,1) both' }}>
           <LeadMap leads={mapLeads} selected={selected} onSelect={openLead} />
           <div className="pointer-events-none absolute left-4 top-4 z-[500] rounded-lg bg-[oklch(0.2_0.018_50/.85)] px-3 py-2">
-            <Eyebrow>Postcode areas · approximate, never an address</Eyebrow>
+            <Eyebrow>● exact address (with consent) · ◌ approximate postcode area</Eyebrow>
           </div>
         </div>
       </section>
@@ -197,7 +197,7 @@ export function LiveSales() {
               <div>
                 <Eyebrow className="text-[var(--amber)]">Briefing for the Heizungsbaumeister</Eyebrow>
                 <h2 className="font-serif-h mt-2 text-[clamp(32px,4vw,52px)] font-normal leading-none">{r.lead_id}</h2>
-                <p className="mt-2 text-sm text-[var(--sand)]">{r.location?.region ?? '—'} ({r.location?.area}) · {when(r.created_at)} · {r.channel} · {r.language}{r.contact ? ` · ${r.contact.name} · ${r.contact.phone} · ${r.contact.preferred_time ?? 'any time'}` : ' · contact not shared'}</p>
+                <p className="mt-2 text-sm text-[var(--sand)]">{r.location?.region ?? '—'} ({r.location?.area}) · {when(r.created_at)} · {r.channel} · {r.language}{r.contact ? ` · ${r.contact.name} · ${r.contact.phone} · ${r.contact.preferred_time ?? 'any time'}${r.contact.address ? ` · ${r.contact.address}` : ''}` : ' · contact not shared'}</p>
               </div>
               <div className="flex gap-2 print:hidden">
                 <button onClick={() => window.print()} className="rounded-full bg-[var(--amber)] px-4 py-2 text-sm font-semibold text-[var(--bg)]">Print briefing</button>

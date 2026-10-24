@@ -36,6 +36,8 @@ export function buildReport(s: Session, leadId: string, promised: string) {
     name: s.profile.slots.contact_name?.value ?? null,
     phone: s.profile.slots.contact_phone?.value ?? null,
     preferred_time: s.profile.slots.contact_time?.value ?? null,
+    address: s.profile.slots.contact_address?.value ?? null,
+    geo: s.profile.geo ?? null,
   } : null;
   return {
     lead_id: leadId,

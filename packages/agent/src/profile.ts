@@ -19,6 +19,8 @@ export type Profile = {
   location?: LocationInfo;
   photos: PhotoRecord[];
   pipePhoto?: PhotoFindings;
+  /** Geocoded house address (sales map only; set only with contact consent). */
+  geo?: { lat: number; lon: number; display: string; precision: 'building' | 'street' | 'area' };
   meterCabinet?: PreCheck['meterCabinet'];
   outdoor?: { space1x1: 'yes' | 'no' | 'unsure'; neighbourOk: 'yes' | 'no' | 'unsure'; distance_m?: number };
 };

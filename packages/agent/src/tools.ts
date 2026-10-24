@@ -8,6 +8,7 @@ import { hasLlmKey } from '@hpr/core/ai/provider';
 import { priceBand, sizeToUnits, subsidyEstimate, COST_DRIVERS, NUU_PAYBACK, type IncomeBand } from '@hpr/core/sales/offer';
 import { tightPlacement } from '@hpr/core/sales/types';
 import { visitDecision } from '@hpr/core/sales/visitDecision';
+import { geocodeAddress } from './geocode';
 import { lookupLocation } from './location';
 import { nextQuestions, photoTasks } from './nextQuestions';
 import { outcomeKey, outcomeText, DEFAULT_OUTCOME_CONFIG, type OutcomeConfig } from './outcomes';
@@ -56,7 +57,7 @@ export const TOOLS: Tool[] = [
       const state = deriveState(s);
       const next = state === 'LOCATION' ? (!s.profile.slots.lang ? 'lang' : 'postcode')
         : state === 'SALES_QUESTIONS' ? ['ownership', 'timeline', 'decision_makers'].find((x) => !s.profile.slots[x])
-        : state === 'CONSENT_CONTACT' && s.consent?.contact ? ['contact_name', 'contact_phone', 'contact_time'].find((x) => !s.profile.slots[x])
+        : state === 'CONSENT_CONTACT' && s.consent?.contact ? ['contact_name', 'contact_phone', 'contact_time', 'contact_address'].find((x) => !s.profile.slots[x])
         : nq.questions[0]?.slot;
       return { state, progress: progress(s), lang: s.lang, channel: s.channel, next_question: next ? { ...slotView(next, s.lang), reason: nq.questions[0]?.reason } : null };
     },
@@ -309,7 +310,7 @@ export const TOOLS: Tool[] = [
     parameters: obj({ share: { type: 'boolean' }, contact: { type: 'boolean' }, photos: { type: 'boolean' }, recording: { type: 'boolean' } }, ['share']),
     handler: (ctx, { share, contact, photos, recording }) => {
       ctx.session.consent = { share: Boolean(share), contact: Boolean(share && contact), photos: Boolean(share && photos), recording: Boolean(recording), at: new Date().toISOString(), textVersion: ctx.config.consentTextVersion ?? 'v0-draft' };
-      return { consent: ctx.session.consent, state: deriveState(ctx.session), next: share && contact ? 'Ask for contact_name, contact_phone, contact_time via update_profile.' : 'Call finish_session.' };
+      return { consent: ctx.session.consent, state: deriveState(ctx.session), next: share && contact ? 'Ask for contact_name, contact_phone, contact_time and contact_address via update_profile.' : 'Call finish_session.' };
     },
   },
   {
@@ -321,6 +322,9 @@ export const TOOLS: Tool[] = [
       const { a, d } = decision(ctx);
       const consented = Boolean(s.consent?.share);
       const preferredTime = s.consent?.contact ? (s.profile.slots.contact_time?.value as string | undefined) : undefined;
+      // Exact location for the sales map, only with contact consent and a given address.
+      const addr = s.consent?.contact ? s.profile.slots.contact_address?.value : undefined;
+      if (typeof addr === 'string' && addr !== 'unknown' && !s.profile.geo) s.profile.geo = (await geocodeAddress(addr)) ?? undefined;
       const key = outcomeKey(a, d, consented);
       let report: { lead_id: string; files: string[]; webhook?: number; mail?: string; mailError?: string } | null = null;
       if (consented) {
