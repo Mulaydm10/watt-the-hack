@@ -105,7 +105,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8"><Guard onReset={() => setView({ kind: 'home' })}>
+      <main className={`mx-auto px-4 py-8 ${view.kind === 'sales' ? 'max-w-none' : 'max-w-5xl'}`}><Guard onReset={() => setView({ kind: 'home' })}>
         {view.kind === 'home' && (
           <div className="space-y-8">
             <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:oklch(0.2 0.018 50);-webkit-font-smoothing:antialiased}
+a{color:oklch(0.8 0.14 70)} a:hover{color:oklch(0.9 0.1 80)}
+input[type=range]{accent-color:oklch(0.8 0.14 70);width:100%}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes ping{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.8);opacity:0}}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes scanA{0%{top:-8%;opacity:0}8%{opacity:1}100%{top:104%;opacity:.6}}
+@keyframes scanB{0%{top:-8%;opacity:0}8%{opacity:1}100%{top:104%;opacity:.6}}
+@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.07)}}
+@keyframes flash{0%{background:oklch(0.8 0.14 70 / .35)}100%{background:oklch(0.8 0.14 70 / 0)}}
+@keyframes toastin{0%{opacity:0;transform:translateY(-16px) scale(.97)}12%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" onMouseMove="{{ onRootMove }}" data-screen-label="Sales desk" style="min-height:100vh;color:oklch(0.94 0.022 80);font-family:'Geist',system-ui,sans-serif;background:radial-gradient(900px circle at var(--mx,78%) var(--my,0%), oklch(0.36 0.07 55 / 0.55), transparent 60%), oklch(0.2 0.018 50);position:relative;overflow-x:hidden">
+
+  <header style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(20px,4vw,56px);border-bottom:1px solid oklch(0.33 0.022 55)">
+    <div style="display:flex;align-items:baseline;gap:14px">
+      <div style="font-family:'Fraunces',serif;font-size:26px;font-weight:500;letter-spacing:-0.01em">Heat Pump Ready<span style="font-style:italic;color:oklch(0.8 0.14 70)">?</span></div>
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Sales desk · nuuEnergy</div>
+    </div>
+    <nav style="display:flex;align-items:center;gap:4px;font-size:14px">
+      <a href="#" style="padding:8px 12px;color:oklch(0.78 0.03 75);text-decoration:none">Homeowner</a>
+      <a href="#" style="padding:8px 12px;color:oklch(0.94 0.022 80);text-decoration:none;border-bottom:1.5px solid oklch(0.8 0.14 70)">Visit decisions</a>
+      <a href="#" style="padding:8px 12px;color:oklch(0.78 0.03 75);text-decoration:none">Live leads</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:14px;font-family:'Geist Mono',monospace;font-size:12px;color:oklch(0.78 0.03 75)">
+      <span style="display:flex;align-items:center;gap:8px"><span style="position:relative;width:8px;height:8px;display:inline-block"><span style="position:absolute;inset:0;border-radius:50%;background:oklch(0.8 0.14 150);animation:ping 1.8s ease-out infinite"></span><span style="position:absolute;inset:0;border-radius:50%;background:oklch(0.8 0.14 150)"></span></span>Live · {{ clock }}</span>
+      <span style="padding:4px 10px;border:1px solid oklch(0.33 0.022 55);border-radius:999px">demo · would be behind login</span>
+    </div>
+  </header>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ pickNew }}" style="position:fixed;top:84px;right:clamp(20px,4vw,56px);z-index:20;cursor:pointer;background:oklch(0.27 0.03 55);border:1px solid oklch(0.8 0.14 70);border-radius:10px;padding:14px 18px;display:flex;gap:14px;align-items:center;box-shadow:0 20px 50px oklch(0.1 0.02 50 / .6);animation:toastin 4.5s cubic-bezier(.2,.7,.2,1) both">
+      <span style="font-family:'Fraunces',serif;font-size:28px;color:oklch(0.8 0.14 70)">↘</span>
+      <div><div style="font-weight:600;font-size:14px">New lead · L-2420</div><div style="font-size:13px;color:oklch(0.78 0.03 75)">Voice agent · Hamburg 22xxx · tenant · tap to open</div></div>
+    </div>
+  </sc-if>
+
+  <section data-screen-label="Hero" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(28px,4vw,56px);padding:clamp(28px,4vw,52px) clamp(20px,4vw,56px) 32px;align-items:stretch">
+    <div style="display:flex;flex-direction:column;justify-content:space-between;gap:32px;min-width:0">
+      <div style="animation:rise .9s cubic-bezier(.2,.7,.2,1) both">
+        <div style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.8 0.14 70)">Sat 24 Oct 2026 · {{ leadCount }} leads in queue</div>
+        <h1 style="font-family:'Fraunces',serif;font-weight:400;font-size:clamp(48px,6.4vw,92px);line-height:0.96;letter-spacing:-0.03em;margin:16px 0 18px;text-wrap:balance">Should we send <span style="font-style:italic;color:oklch(0.86 0.11 72)">an expert?</span></h1>
+        <p style="margin:0;font-size:17px;line-height:1.55;color:oklch(0.78 0.03 75);max-width:540px;text-wrap:pretty">Every visit decision comes from visible rules and your own assumptions. The technical traffic light is never changed by sales logic.</p>
+      </div>
+      <div style="animation:rise .9s .12s cubic-bezier(.2,.7,.2,1) both">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Expected value · visits worth paying for</div>
+        <div style="font-family:'Fraunces',serif;font-weight:350;font-size:clamp(64px,8.5vw,124px);line-height:1;letter-spacing:-0.035em;font-variant-numeric:tabular-nums;margin-top:6px">+€{{ pipeStr }}</div>
+        <div style="font-size:13px;color:oklch(0.78 0.03 75);margin-top:6px">P(sale) × margin − visit cost, summed · an estimate, not a measured accuracy</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid oklch(0.94 0.022 80 / .5)">
+        <div style="padding:16px 16px 0 0;animation:rise .7s .22s both">
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Worth a visit</div>
+          <div style="font-family:'Fraunces',serif;font-size:40px;line-height:1.15;font-variant-numeric:tabular-nums">{{ worthCount }}<span style="font-size:20px;color:oklch(0.78 0.03 75)"> / {{ leadCount }}</span></div>
+        </div>
+        <div style="padding:16px 16px 0;border-left:1px solid oklch(0.33 0.022 55);animation:rise .7s .3s both">
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Visit spend held back</div>
+          <div style="font-family:'Fraunces',serif;font-size:40px;line-height:1.15;font-variant-numeric:tabular-nums">€{{ savedStr }}</div>
+          <div style="font-size:12px;color:oklch(0.78 0.03 75)">{{ heldCount }} leads to info or nurture</div>
+        </div>
+        <div style="padding:16px 0 0 16px;border-left:1px solid oklch(0.33 0.022 55);animation:rise .7s .38s both">
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Decision mix</div>
+          <div style="display:flex;height:26px;margin-top:10px;gap:2px">
+            <sc-for list="{{ mix }}" as="m" hint-placeholder-count="4">
+              <div title="{{ m.title }}" style="flex:{{ m.n }};background:{{ m.c }};color:oklch(0.2 0.018 50);font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;transform-origin:left;transition:flex .6s;animation:grow 1s {{ m.delay }}ms cubic-bezier(.2,.7,.2,1) both">{{ m.t }}</div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:oklch(0.78 0.03 75);margin-top:8px">A send · B call · C ask · D not now</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0;animation:rise 1s .2s cubic-bezier(.2,.7,.2,1) both">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Thermal pre-scan · {{ sel.id }} · {{ sel.region }} {{ sel.area }}</div>
+        <div style="font-size:12px;color:oklch(0.78 0.03 75)">illustrative, modelled from building facts</div>
+      </div>
+      <div onMouseMove="{{ onThermalMove }}" onMouseLeave="{{ onThermalLeave }}" style="position:relative;aspect-ratio:5/4;border-radius:6px;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%, oklch(0.24 0.08 290), oklch(0.15 0.04 280));border:1px solid oklch(0.33 0.022 55);cursor:crosshair">
+        <div style="position:absolute;inset:0;background-image:linear-gradient(oklch(0.9 0.05 300 / .05) 1px, transparent 1px),linear-gradient(90deg, oklch(0.9 0.05 300 / .05) 1px, transparent 1px);background-size:24px 24px"></div>
+        <div style="position:absolute;left:16%;right:22%;top:10%;bottom:12%;clip-path:polygon(50% 0, 100% 38%, 100% 100%, 0 100%, 0 38%);background:linear-gradient(oklch(0.3 0.13 295), oklch(0.26 0.11 285))">
+          <div style="position:absolute;inset:0;background:radial-gradient(70% 70% at 50% 55%, oklch(0.5 0.2 350), transparent 75%);opacity:{{ sel.warm }};transition:opacity 1.2s"></div>
+          <sc-for list="{{ blobs }}" as="b" hint-placeholder-count="6">
+            <div style="position:absolute;left:{{ b.x }}%;top:{{ b.y }}%;width:{{ b.s }}%;aspect-ratio:1;border-radius:50%;opacity:{{ b.o }};mix-blend-mode:screen;background:radial-gradient(circle, oklch(0.98 0.06 100) 0%, oklch(0.88 0.17 88) 16%, oklch(0.72 0.2 50) 36%, oklch(0.55 0.22 15) 56%, oklch(0.45 0.2 340 / 0) 74%);filter:blur(4px);transition:left 1.2s cubic-bezier(.6,0,.2,1), top 1.2s cubic-bezier(.6,0,.2,1), width 1.2s cubic-bezier(.6,0,.2,1), opacity 1.2s;animation:breathe {{ b.dur }}s ease-in-out infinite"></div>
+          </sc-for>
+          <div style="position:absolute;left:16%;top:44%;width:20%;height:17%;border:1px solid oklch(0.96 0.04 90 / .22)"></div>
+          <div style="position:absolute;right:16%;top:44%;width:20%;height:17%;border:1px solid oklch(0.96 0.04 90 / .22)"></div>
+          <div style="position:absolute;left:43%;bottom:0;width:14%;height:24%;border:1px solid oklch(0.96 0.04 90 / .22);border-bottom:none"></div>
+          <div style="position:absolute;left:0;right:0;height:14%;background:linear-gradient(transparent, oklch(0.95 0.1 90 / .35), transparent);animation:{{ scanAnim }} 2.2s cubic-bezier(.4,0,.2,1) both"></div>
+        </div>
+        <div style="position:absolute;left:6%;right:6%;bottom:12%;height:1px;background:oklch(0.9 0.05 300 / .25)"></div>
+        <div style="position:absolute;right:6%;top:12%;bottom:14%;width:10px;border-radius:2px;background:linear-gradient(to top, oklch(0.26 0.11 285), oklch(0.45 0.2 340), oklch(0.6 0.22 20), oklch(0.76 0.18 55), oklch(0.9 0.15 92), oklch(0.98 0.05 100))"></div>
+        <div style="position:absolute;right:calc(6% + 16px);top:11%;font-family:'Geist Mono',monospace;font-size:11px;color:oklch(0.94 0.022 80)">22°</div>
+        <div style="position:absolute;right:calc(6% + 16px);bottom:13%;font-family:'Geist Mono',monospace;font-size:11px;color:oklch(0.94 0.022 80)">0°</div>
+        <div style="position:absolute;left:16px;top:14px;font-family:'Geist Mono',monospace;font-size:11px;line-height:1.6;color:oklch(0.94 0.022 80)">IR · {{ sel.id }} · {{ sel.year }} · ε 0.95<br><span style="color:oklch(0.86 0.11 72)">max surface {{ maxT }} °C</span></div>
+        <sc-if value="{{ crossOn }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:{{ cross.x }}%;top:0;bottom:0;width:1px;background:oklch(0.98 0.02 90 / .45);pointer-events:none"></div>
+          <div style="position:absolute;top:{{ cross.y }}%;left:0;right:0;height:1px;background:oklch(0.98 0.02 90 / .45);pointer-events:none"></div>
+          <div style="position:absolute;left:{{ cross.x }}%;top:{{ cross.y }}%;transform:translate(10px,-34px);padding:4px 8px;background:oklch(0.15 0.03 280 / .85);border:1px solid oklch(0.98 0.02 90 / .4);font-family:'Geist Mono',monospace;font-size:12px;color:oklch(0.98 0.02 90);pointer-events:none;white-space:nowrap">{{ cross.t }} °C</div>
+        </sc-if>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:oklch(0.33 0.022 55);border:1px solid oklch(0.33 0.022 55)">
+        <div style="background:oklch(0.2 0.018 50);padding:10px 12px"><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Heat load</div><div style="font-family:'Fraunces',serif;font-size:24px">{{ sel.kw }} kW</div></div>
+        <div style="background:oklch(0.2 0.018 50);padding:10px 12px"><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Range</div><div style="font-family:'Fraunces',serif;font-size:24px">{{ sel.range }}</div></div>
+        <div style="background:oklch(0.2 0.018 50);padding:10px 12px"><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Unit size</div><div style="font-family:'Fraunces',serif;font-size:24px">{{ sel.unit }} kW</div></div>
+        <div style="background:oklch(0.2 0.018 50);padding:10px 12px"><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Load / m²</div><div style="font-family:'Fraunces',serif;font-size:24px">{{ sel.wpm }} W</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Assumptions" style="margin:0 clamp(20px,4vw,56px);padding:20px 0;border-top:1px solid oklch(0.33 0.022 55);border-bottom:1px solid oklch(0.33 0.022 55);display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end">
+    <div style="flex:1 1 200px;min-width:180px">
+      <div style="font-family:'Fraunces',serif;font-size:22px">Company inputs</div>
+      <div style="font-size:13px;color:oklch(0.86 0.11 72)">placeholder · nuuEnergy to set · drag to re-decide live</div>
+    </div>
+    <label style="flex:1 1 170px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:oklch(0.78 0.03 75)"><span style="display:flex;justify-content:space-between">Visit cost<b style="color:oklch(0.94 0.022 80);font-family:'Geist Mono',monospace;font-weight:500">€{{ costStr }}</b></span><input type="range" min="200" max="1500" step="10" value="{{ cost }}" onChange="{{ setCost }}"></label>
+    <label style="flex:1 1 170px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:oklch(0.78 0.03 75)"><span style="display:flex;justify-content:space-between">Margin per sale<b style="color:oklch(0.94 0.022 80);font-family:'Geist Mono',monospace;font-weight:500">€{{ marginStr }}</b></span><input type="range" min="2000" max="10000" step="100" value="{{ margin }}" onChange="{{ setMargin }}"></label>
+    <sc-for list="{{ baseCtl }}" as="bc" hint-placeholder-count="4">
+      <label style="flex:1 1 110px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:oklch(0.78 0.03 75)"><span style="display:flex;justify-content:space-between">Base P {{ bc.t }}<b style="color:oklch(0.94 0.022 80);font-family:'Geist Mono',monospace;font-weight:500">{{ bc.v }}%</b></span><input type="range" min="0" max="60" step="1" value="{{ bc.v }}" onChange="{{ bc.set }}"></label>
+    </sc-for>
+    <button onClick="{{ reset }}" style="font-family:'Geist',sans-serif;font-size:13px;padding:9px 16px;border-radius:999px;border:1px solid oklch(0.45 0.03 60);background:transparent;color:oklch(0.94 0.022 80);cursor:pointer" style-hover="background:oklch(0.27 0.025 55)">Reset</button>
+  </section>
+
+  <main style="display:flex;flex-wrap:wrap;gap:32px;padding:28px clamp(20px,4vw,56px) 40px;align-items:flex-start">
+    <section data-screen-label="Lead list" style="flex:1 1 620px;min-width:0">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.pick }}" style="font-family:'Geist',sans-serif;font-size:13px;padding:8px 14px;border-radius:999px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};cursor:pointer;display:flex;gap:8px;align-items:center;transition:background .25s, color .25s">{{ t.label }}<span style="font-family:'Geist Mono',monospace;font-size:11px;opacity:.8">{{ t.n }}</span></button>
+          </sc-for>
+        </div>
+        <div style="font-family:'Geist Mono',monospace;font-size:12px;color:oklch(0.78 0.03 75)">sorted by {{ sortBy }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;border-top:1px solid oklch(0.33 0.022 55)">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <div onClick="{{ r.pick }}" style="position:relative;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;padding:16px 16px 16px 18px;border-bottom:1px solid oklch(0.33 0.022 55);background:{{ r.bg }};cursor:pointer;transition:background .3s;animation:rise .6s {{ r.delay }}ms cubic-bezier(.2,.7,.2,1) both" style-hover="background:oklch(0.25 0.022 52)">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:{{ r.bar }};transition:background .3s"></div>
+            <sc-if value="{{ r.isNew }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;pointer-events:none;animation:flash 2.4s ease-out 3"></div></sc-if>
+            <div style="flex:1 1 130px;min-width:120px">
+              <div style="font-family:'Fraunces',serif;font-size:22px;line-height:1.1">{{ r.id }}</div>
+              <div style="font-size:12px;color:oklch(0.78 0.03 75);margin-top:2px">{{ r.region }} {{ r.area }} · {{ r.channel }} · {{ r.ago }}</div>
+            </div>
+            <div style="flex:1 1 120px;display:flex;align-items:center;gap:8px;font-size:13px">
+              <span style="width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:{{ r.vC }};color:oklch(0.2 0.018 50);font-size:12px;font-weight:700">{{ r.vG }}</span>
+              <span><span style="display:block">{{ r.vT }}</span><span style="font-size:12px;color:oklch(0.78 0.03 75)">{{ r.kw }} kW · {{ r.conf }}</span></span>
+            </div>
+            <div style="flex:0 0 96px;display:flex;align-items:center;gap:10px">
+              <div style="width:30px;height:30px;border-radius:50%;background:conic-gradient(oklch(0.86 0.11 72) {{ r.pre }}%, oklch(0.33 0.022 55) 0);display:grid;place-items:center"><div style="width:22px;height:22px;border-radius:50%;background:oklch(0.2 0.018 50)"></div></div>
+              <div style="font-size:12px;color:oklch(0.78 0.03 75);line-height:1.3"><span style="font-family:'Geist Mono',monospace;color:oklch(0.94 0.022 80);font-size:13px">{{ r.pre }}%</span><br>pre-check</div>
+            </div>
+            <div style="flex:1 1 150px">
+              <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid {{ r.tC }};background:{{ r.tBg }};color:{{ r.tC }};font-size:13px;font-weight:500;white-space:nowrap"><span style="font-family:'Geist Mono',monospace">{{ r.tier }}</span>{{ r.tG }} {{ r.tLabel }}</span>
+            </div>
+            <div style="flex:0 0 110px;text-align:right">
+              <div style="font-family:'Fraunces',serif;font-size:22px;font-variant-numeric:tabular-nums;color:{{ r.evC }};transition:color .4s">{{ r.evTxt }}</div>
+              <div style="font-size:12px;color:oklch(0.78 0.03 75)">{{ r.worthTxt }}</div>
+            </div>
+            <div style="flex:1 1 100%;font-size:13px;color:oklch(0.78 0.03 75);padding-left:0">↳ {{ r.top }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <p style="font-size:12px;line-height:1.5;color:oklch(0.78 0.03 75);margin-top:16px;max-width:640px">Scored only on building facts and the homeowner's own answers: never on income, nationality, age, gender or name. Homeowners can object to profiling for marketing at any time.</p>
+    </section>
+
+    <aside data-screen-label="Inspector" style="flex:1 1 380px;min-width:0;max-width:560px;position:sticky;top:20px;background:oklch(0.24 0.02 52);border:1px solid oklch(0.33 0.022 55);border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:oklch(0.78 0.03 75)">Why this decision?</div>
+          <div style="font-family:'Fraunces',serif;font-size:38px;line-height:1.05;margin-top:4px">{{ sel.id }} <span style="font-style:italic;color:oklch(0.78 0.03 75);font-size:24px">{{ sel.region }}</span></div>
+          <div style="font-size:13px;color:oklch(0.78 0.03 75);margin-top:4px">{{ sel.year }} · {{ sel.m2 }} m² · {{ sel.carrier }} · {{ sel.dist }}</div>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid {{ sel.tC }};background:{{ sel.tBg }};color:{{ sel.tC }};font-size:13px;font-weight:500;white-space:nowrap">{{ sel.tG }} {{ sel.tLabel }}</span>
+      </div>
+      <div style="font-size:14px;line-height:1.5;padding:12px 14px;border-radius:6px;background:oklch(0.2 0.018 50)"><span style="color:oklch(0.78 0.03 75)">Next step ·</span> {{ sel.action }}</div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+          <div style="font-family:'Fraunces',serif;font-size:20px">P(sale) build-up</div>
+          <div style="font-family:'Fraunces',serif;font-size:28px;font-variant-numeric:tabular-nums;color:oklch(0.86 0.11 72)">{{ selPStr }}%</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ fall }}" as="f" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 120px 52px;gap:10px;align-items:center;font-size:13px">
+              <div style="color:oklch(0.9 0.025 80);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ f.label }}">{{ f.label }}</div>
+              <div style="position:relative;height:10px;background:oklch(0.2 0.018 50);border-radius:2px">
+                <div style="position:absolute;top:0;bottom:0;left:{{ f.left }}%;width:{{ f.w }}%;background:{{ f.c }};border-radius:2px;transition:left .6s cubic-bezier(.2,.7,.2,1), width .6s cubic-bezier(.2,.7,.2,1)"></div>
+              </div>
+              <div style="font-family:'Geist Mono',monospace;font-size:12px;text-align:right;color:{{ f.c }}">{{ f.d }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:oklch(0.78 0.03 75);margin-top:8px">Fixed, visible adjustments per signal · capped 5–90%</div>
+      </div>
+
+      <div style="padding:16px 0;border-top:1px solid oklch(0.33 0.022 55);border-bottom:1px solid oklch(0.33 0.022 55)">
+        <div style="font-family:'Geist Mono',monospace;font-size:13px;color:oklch(0.78 0.03 75)">{{ selPStr }}% × €{{ marginStr }} − €{{ costStr }} =</div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Fraunces',serif;font-size:52px;line-height:1.1;font-variant-numeric:tabular-nums;color:{{ sel.evC }};transition:color .4s">{{ selEvStr }}</div>
+          <div style="font-size:14px;color:{{ sel.evC }}">{{ sel.verdictLine }}</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:20px;margin-bottom:8px">Reasons</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <sc-for list="{{ sel.reasons }}" as="x" hint-placeholder-count="3">
+            <div style="display:flex;gap:10px;font-size:14px;line-height:1.45"><span style="color:oklch(0.8 0.14 70)">—</span><span>{{ x }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px">
+        <div>
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.8 0.14 150);margin-bottom:8px">✓ Answered remotely</div>
+          <sc-for list="{{ sel.remote }}" as="x" hint-placeholder-count="3">
+            <div style="font-size:13px;line-height:1.45;padding:5px 0;border-bottom:1px dashed oklch(0.33 0.022 55)">{{ x }}</div>
+          </sc-for>
+        </div>
+        <div>
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.86 0.11 72);margin-bottom:8px">○ Check on site</div>
+          <sc-for list="{{ sel.onsite }}" as="x" hint-placeholder-count="3">
+            <div style="font-size:13px;line-height:1.45;padding:5px 0;border-bottom:1px dashed oklch(0.33 0.022 55)">{{ x }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;color:oklch(0.78 0.03 75)">Est. Heizungsbaumeister visit <b style="color:oklch(0.94 0.022 80);font-weight:500">{{ sel.visit }}</b> <span>(standard ~2 h)</span></div>
+        <button onClick="{{ printBrief }}" style="font-family:'Geist',sans-serif;font-size:14px;font-weight:500;padding:10px 18px;border-radius:999px;border:none;background:oklch(0.8 0.14 70);color:oklch(0.2 0.018 50);cursor:pointer;transition:transform .2s" style-hover="transform:translateY(-1px);background:oklch(0.86 0.12 75)">Print briefing →</button>
+      </div>
+    </aside>
+  </main>
+
+  <sc-if value="{{ showTicker }}" hint-placeholder-val="{{ true }}">
+    <div style="border-top:1px solid oklch(0.33 0.022 55);overflow:hidden;padding:12px 0;background:oklch(0.18 0.016 50)">
+      <div style="display:flex;width:max-content;animation:drift 60s linear infinite">
+        <sc-for list="{{ ticker }}" as="tk" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:12px;padding:0 24px;font-family:'Geist Mono',monospace;font-size:12px;color:oklch(0.78 0.03 75);white-space:nowrap"><span style="color:oklch(0.8 0.14 70)">◆</span>{{ tk }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;sortBy&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Decision&quot;,&quot;Expected value&quot;,&quot;Newest&quot;],&quot;default&quot;:&quot;Decision&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;liveSim&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;crosshair&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showTicker&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const TIER = {
+  A: { label: 'Send expert', g: '→', action: 'Book the on-site heat-load visit', c: 'oklch(0.82 0.13 150)', bg: 'oklch(0.82 0.13 150 / 0.12)' },
+  B: { label: 'Call first', g: '☏', action: '30-min technical phone call first; upgrade to a visit if gaps close', c: 'oklch(0.82 0.09 230)', bg: 'oklch(0.82 0.09 230 / 0.12)' },
+  C: { label: 'Ask for info', g: '?', action: 'Ask for missing info / photos', c: 'oklch(0.84 0.13 88)', bg: 'oklch(0.84 0.13 88 / 0.12)' },
+  D: { label: 'Not now', g: '◌', action: 'Not now: send info and subsidy guide, re-contact later', c: 'oklch(0.76 0.03 70)', bg: 'oklch(0.76 0.03 70 / 0.12)' },
+};
+const VERD = {
+  green: { g: '✓', t: 'Ready', c: 'oklch(0.8 0.14 150)' },
+  yellow: { g: '!', t: 'Check needed', c: 'oklch(0.85 0.14 88)' },
+  red: { g: '✕', t: 'Blocker', c: 'oklch(0.72 0.15 28)' },
+};
+const DEFAULTS = { cost: 650, margin: 5200, base: { A: 0.40, B: 0.22, C: 0.10, D: 0.04 } };
+const LEADS = [
+  { id: 'B-02', region: 'Munich', area: '82xxx', channel: 'app', ago: 4, year: 2005, m2: 180, carrier: 'Natural gas', dist: 'Underfloor', verdict: 'green', conf: 'high', kw: 9.5, range: '8.9–10.4', unit: 10, pre: 80, tier: 'A',
+    steps: [['Owner-occupied', 0.08], ['Boiler 18 yrs, switch ≤ 6 months', 0.08], ['Pre-check 80% done', 0.05], ['Underfloor, low flow temperature', 0.06]],
+    reasons: ['Green verdict with high confidence: underfloor heating runs at low flow temperature', 'Owner, wants to switch within 6 months', 'Meter cabinet and outdoor spot already answered by photo'],
+    remote: ['Meter cabinet · looks modern', 'Outdoor spot · 1.4 m to boundary', 'Energy bill · matches the house'], onsite: ['Exact heat load', 'Wood-stove share of winter heat'], visit: '~75 min',
+    leaks: [[50, 22, 30, .25], [30, 52, 22, .3], [70, 52, 22, .28], [50, 84, 20, .35], [18, 86, 18, .15], [82, 86, 18, .15]], warm: .15 },
+  { id: 'B-01', region: 'Munich', area: '82xxx', channel: 'app', ago: 22, year: 2001, m2: 195, carrier: 'LPG', dist: 'Radiators', verdict: 'green', conf: 'medium', kw: 9.8, range: '9.1–10.6', unit: 10, pre: 70, tier: 'A',
+    steps: [['Owner-occupied', 0.08], ['LPG boiler 25 yrs · +16% speed bonus', 0.06], ['Switch within 6 months', 0.05], ['Pre-check 70% done', 0.03], ['Valves already preset', 0.02]],
+    reasons: ['Green verdict: U-values stated by owner fit a low flow temperature', 'Boiler ≥ 20 yrs unlocks the +16% climate-speed bonus', 'Pre-check above the 60% threshold'],
+    remote: ['14 radiators, valves preset', 'Energy bill · 10,000 kWh LPG', 'Outdoor spot · 1.6 m, noise check OK'], onsite: ['Meter cabinet condition', 'Radiator types 11/22/33', 'Pipe system'], visit: '~90 min',
+    leaks: [[50, 24, 34, .35], [30, 52, 26, .5], [70, 52, 26, .48], [50, 84, 22, .4], [30, 76, 20, .35], [70, 76, 20, .3]], warm: .25 },
+  { id: 'L-2418', region: 'Munich', area: '81xxx', channel: 'app', ago: 9, year: 2012, m2: 140, carrier: 'Natural gas', dist: 'Underfloor', verdict: 'green', conf: 'high', kw: 6.4, range: '5.9–7.0', unit: 7, pre: 90, tier: 'A',
+    steps: [['Owner-occupied', 0.08], ['Boiler broken, wants ASAP', 0.12], ['Pre-check 90% done', 0.06], ['Green, high confidence', 0.04]],
+    reasons: ['Boiler is broken: real urgency, not a sales trick', 'Modern 2012 build, small unit size suffices', 'Almost every technician check answered by photo'],
+    remote: ['Meter cabinet · looks modern', 'Outdoor spot · 2.1 m to boundary', 'Boiler room photo', 'Energy bill'], onsite: ['Exact heat load'], visit: '~50 min',
+    leaks: [[50, 22, 26, .15], [30, 52, 20, .2], [70, 52, 20, .18], [50, 84, 18, .22], [18, 86, 16, .1], [82, 86, 16, .1]], warm: .08 },
+  { id: 'B-03', region: 'Hamburg', area: '21xxx', channel: 'voice', ago: 41, year: 1970, m2: 200, carrier: 'Heating oil', dist: 'Radiators · two-pipe', verdict: 'yellow', conf: 'medium', kw: 14.2, range: '13.0–15.4', unit: 16, pre: 45, tier: 'B',
+    steps: [['Owner-occupied', 0.08], ['Oil boiler, ~4,000 l / yr', 0.06], ['12 valves need replacement', -0.04], ['Pre-check 45%, below 60%', -0.03]],
+    reasons: ['Yellow: double glazing without low-e, top floor not lived in', 'Two-pipe system is a good sign, but pre-check below 60%', 'A 30-min call can close the radiator gaps'],
+    remote: ['Pipe system · two-pipe', 'Energy bill · 40,000 kWh'], onsite: ['Meter cabinet', 'Outdoor spot & neighbour distance', 'Radiator sizes', 'Exact heat load'], visit: '~2 h',
+    leaks: [[50, 20, 50, .75], [30, 52, 32, .9], [70, 52, 32, .85], [50, 84, 28, .7], [22, 80, 30, .6], [78, 80, 30, .65]], warm: .6 },
+  { id: 'B-04', region: 'Munich', area: '85xxx', channel: 'app', ago: 63, year: 1987, m2: 160, carrier: 'Heating oil', dist: 'Radiators · single-pipe', verdict: 'yellow', conf: 'low', kw: 13.1, range: '11.8–14.4', unit: 16, pre: 40, tier: 'B',
+    steps: [['Owner-occupied', 0.08], ['Oil, switch within 1–2 yrs', 0.02], ['Single-pipe system', -0.06], ['Pre-check 40%, below 60%', -0.03]],
+    reasons: ['Single-pipe systems are mostly not suitable: needs a closer look', 'Way forward: smaller unit + heating rod, or staged renovation', 'Semi-detached: tight placement, noise check needed'],
+    remote: ['Pipe system · single-pipe (valve blocks)', 'Energy bill · 2,500 l oil'], onsite: ['End radiators of the single-pipe loop', 'Meter cabinet', 'Outdoor spot, distance to boundary', 'Exact heat load'], visit: '~2 h',
+    leaks: [[45, 24, 40, .6], [28, 52, 30, .8], [68, 52, 26, .55], [45, 84, 26, .7], [12, 70, 30, .75], [88, 70, 16, .15]], warm: .5 },
+  { id: 'B-05', region: 'Munich', area: '85xxx', channel: 'app', ago: 88, year: 2006, m2: 125, carrier: 'Natural gas', dist: 'Underfloor + 8 radiators', verdict: 'yellow', conf: 'low', kw: 11.8, range: '8.1–14.9', unit: 12, pre: 30, tier: 'C',
+    steps: [['Owner-occupied', 0.08], ['Consumption high for a 2006 house', -0.06], ['Meter-cabinet photo missing', -0.03]],
+    reasons: ['27,000 kWh looks high for a 125 m² house from 2006: asked the homeowner to check the bill', 'Visit now would likely find bad data', 'Key photos still missing'],
+    remote: ['Glazing · double low-e'], onsite: ['Correct annual consumption', 'Meter cabinet photo', 'Outdoor spot photo'], visit: 'after info',
+    leaks: [[50, 18, 55, .85], [30, 50, 26, .45], [70, 50, 26, .45], [50, 84, 20, .5], [10, 66, 28, .7], [90, 66, 28, .7]], warm: .45 },
+  { id: 'L-2420', late: true, region: 'Hamburg', area: '22xxx', channel: 'voice', ago: 0, year: 1995, m2: 130, carrier: 'Natural gas', dist: 'Radiators', verdict: 'yellow', conf: 'medium', kw: 10.6, range: '9.6–11.8', unit: 12, pre: 35, tier: 'C',
+    steps: [['Tenant, owner not yet involved', -0.05], ['Switch within 6 months', 0.04], ['Pre-check 35%', -0.03]],
+    reasons: ['Tenant cannot decide alone: involve the owner first', 'KfW base subsidy needs an owner-occupier or landlord path'],
+    remote: ['Energy bill via voice agent'], onsite: ['Owner contact', 'Meter cabinet', 'Radiator photos'], visit: 'after info',
+    leaks: [[50, 22, 40, .5], [30, 52, 28, .6], [70, 52, 28, .55], [50, 84, 24, .5], [20, 78, 24, .4], [80, 78, 24, .4]], warm: .35 },
+  { id: 'L-2417', region: 'Lower Bavaria', area: '94xxx', channel: 'voice', ago: 120, year: 1978, m2: 170, carrier: 'Heating oil', dist: 'Radiators', verdict: 'yellow', conf: 'low', kw: 15.8, range: '14.0–17.5', unit: 16, pre: 20, tier: 'D',
+    steps: [['Owner-occupied', 0.08], ['"Just curious", no timeline', -0.04]],
+    reasons: ['No timeline yet: send the info pack and subsidy guide', 'Re-contact in 3 months · never "rejected"'],
+    remote: ['Basic house facts'], onsite: ['Everything, once a timeline exists'], visit: '—',
+    leaks: [[50, 20, 50, .8], [30, 52, 32, .85], [70, 52, 32, .85], [50, 84, 28, .75], [20, 80, 30, .7], [80, 80, 30, .7]], warm: .65 },
+  { id: 'L-2419', region: 'Berlin', area: '10xxx', channel: 'app', ago: 150, year: 1999, m2: 150, carrier: 'Natural gas', dist: 'Radiators', verdict: 'green', conf: 'medium', kw: 8.9, range: '8.2–9.7', unit: 10, pre: 60, tier: 'D',
+    steps: [['Owner-occupied', 0.08], ['Outside nuuEnergy service area', -0.30]],
+    reasons: ['Outside nuuEnergy service area (Munich, Hamburg, Lower Bavaria)', 'Not a bad lead: technical verdict unchanged, green'],
+    remote: ['Energy bill', 'Radiator photos'], onsite: ['— not served'], visit: '—',
+    leaks: [[50, 22, 34, .4], [30, 52, 24, .45], [70, 52, 24, .42], [50, 84, 22, .4], [22, 82, 20, .3], [78, 82, 20, .3]], warm: .28 },
+];
+const TICK = ['L-2418 · app · boiler broken → Send expert', 'B-05 · consumption looks high for a 2006 house → Ask for info', 'B-04 · single-pipe system flagged → Call first', 'L-2419 · Berlin 10xxx · outside service area', 'B-02 · meter cabinet photo received · looks modern', 'KfW 458 · +16% speed bonus for boilers ≥ 20 yrs · check current rules', 'B-01 · outdoor spot 1.6 m to boundary · noise check OK', 'Antrag vor Auftrag · subsidy lost if ordered before applying'];
+const fmt = (n) => Math.round(Math.abs(n)).toLocaleString('en-US');
+const sgn = (n) => (n >= 0 ? '+€' : '−€') + fmt(n);
+const RANK = { A: 0, B: 1, C: 2, D: 3 };
+
+class Component extends DCLogic {
+  state = { sel: 'B-02', filter: 'all', cost: DEFAULTS.cost, margin: DEFAULTS.margin, base: { ...DEFAULTS.base }, now: Date.now(), arrived: false, toast: false, cross: null, scanN: 0, newId: null };
+  cur = {}; tgt = {}; raf = null;
+  rootRef = React.createRef();
+
+  componentDidMount() {
+    this.iv = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    if (this.props.liveSim ?? true) {
+      this.t1 = setTimeout(() => {
+        this.setState({ arrived: true, toast: true, newId: 'L-2420' });
+        this.t2 = setTimeout(() => this.setState({ toast: false }), 4500);
+      }, 6000);
+    }
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.t1); clearTimeout(this.t2); if (this.raf) cancelAnimationFrame(this.raf); }
+
+  tick = () => {
+    let moving = false;
+    for (const k in this.tgt) {
+      const d = this.tgt[k] - this.cur[k];
+      if (Math.abs(d) > 0.4) { this.cur[k] += d * 0.13; moving = true; } else this.cur[k] = this.tgt[k];
+    }
+    this.raf = moving ? requestAnimationFrame(this.tick) : null;
+    this.forceUpdate();
+  };
+  tw(k, v) {
+    if (this.cur[k] == null) this.cur[k] = 0;
+    this.tgt[k] = v;
+    if (!this.raf && Math.abs(this.cur[k] - v) > 0.4) this.raf = requestAnimationFrame(this.tick);
+    return this.cur[k];
+  }
+
+  calc(l) {
+    const s = this.state;
+    let p = s.base[l.tier];
+    const fall = [{ label: 'Base rate · tier ' + l.tier, from: 0, to: p, d: Math.round(p * 100) + '%', base: true }];
+    l.steps.forEach(([label, d]) => { const f = p; p += d; fall.push({ label, from: f, to: p, d: (d >= 0 ? '+' : '−') + Math.round(Math.abs(d) * 100) }); });
+    const pc = Math.min(0.9, Math.max(0.05, p));
+    return { p: pc, ev: pc * s.margin - s.cost, fall };
+  }
+
+  select(id) { this.setState((s) => ({ sel: id, scanN: s.scanN + 1, newId: s.newId === id ? null : s.newId })); }
+
+  onRootMove = (e) => {
+    const el = this.rootRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+  };
+  onThermalMove = (e) => {
+    if (!(this.props.crosshair ?? true)) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * 100, y = (e.clientY - r.top) / r.height * 100;
+    const L = LEADS.find((l) => l.id === this.state.sel) || LEADS[0];
+    const rx = (x - 16) / 62 * 100, ry = (y - 10) / 78 * 100;
+    const inside = rx >= 0 && rx <= 100 && ry >= 0 && ry <= 100 && (ry >= 38 || Math.abs(rx - 50) <= ry / 38 * 50);
+    let t = 1.8 + Math.sin(x * 0.7) * 0.2;
+    if (inside) { t = 5 + L.warm * 4; L.leaks.forEach(([bx, by, bs, bo]) => { const d2 = (rx - bx) ** 2 + (ry - by) ** 2; t += bo * 13 * Math.exp(-d2 / ((bs * 0.55) ** 2)); }); }
+    this.setState({ cross: { x: x.toFixed(2), y: y.toFixed(2), t: t.toFixed(1) } });
+  };
+  onThermalLeave = () => this.setState({ cross: null });
+
+  renderVals() {
+    const s = this.state;
+    const sortBy = this.props.sortBy ?? 'Decision';
+    const all = LEADS.filter((l) => !l.late || s.arrived).map((l) => ({ l, ...this.calc(l) }));
+    const sorted = [...all].sort((a, b) =>
+      sortBy === 'Expected value' ? b.ev - a.ev : sortBy === 'Newest' ? a.l.ago - b.l.ago : RANK[a.l.tier] - RANK[b.l.tier] || b.ev - a.ev);
+    const shown = sorted.filter((x) => s.filter === 'all' || x.l.tier === s.filter);
+
+    const visits = all.filter((x) => (x.l.tier === 'A' || x.l.tier === 'B') && x.ev > 0);
+    const held = all.filter((x) => x.l.tier === 'C' || x.l.tier === 'D');
+    const pipe = this.tw('pipe', visits.reduce((a, x) => a + x.ev, 0));
+    const saved = this.tw('saved', held.length * s.cost);
+
+    const rows = shown.map((x, i) => {
+      const l = x.l, T = TIER[l.tier], V = VERD[l.verdict], ev = this.tw('ev_' + l.id, x.ev), on = l.id === s.sel;
+      return {
+        id: l.id, region: l.region, area: l.area, channel: l.channel, ago: l.ago === 0 ? 'just now' : l.ago < 60 ? l.ago + ' min ago' : Math.round(l.ago / 60) + ' h ago',
+        vG: V.g, vT: V.t, vC: V.c, kw: l.kw, conf: l.conf + ' conf.', pre: l.pre, tier: l.tier, tG: T.g, tLabel: T.label, tC: T.c, tBg: T.bg,
+        evTxt: sgn(ev), evC: x.ev > 0 ? 'oklch(0.94 0.022 80)' : 'oklch(0.72 0.03 70)', worthTxt: x.ev > 0 ? 'worth it' : 'not worth it yet',
+        top: l.reasons[0], bg: on ? 'oklch(0.26 0.03 55)' : 'transparent', bar: on ? 'oklch(0.8 0.14 70)' : 'transparent',
+        delay: 80 + i * 60, isNew: s.newId === l.id, pick: () => this.select(l.id),
+      };
+    });
+
+    const selX = all.find((x) => x.l.id === s.sel) || all[0];
+    const L = selX.l, T = TIER[L.tier];
+    const selEv = this.tw('selEv', selX.ev), selP = this.tw('selP', selX.p * 100);
+    const scale = 100;
+    const fall = selX.fall.map((f) => {
+      const a = Math.max(0, Math.min(1, Math.min(f.from, f.to))), b = Math.max(0, Math.min(1, Math.max(f.from, f.to)));
+      return { label: f.label, d: f.d, left: (a * scale).toFixed(1), w: Math.max(1, (b - a) * scale).toFixed(1), c: f.base ? 'oklch(0.78 0.03 75)' : f.to >= f.from ? 'oklch(0.8 0.14 70)' : 'oklch(0.74 0.14 30)' };
+    });
+    fall.push({ label: 'P(sale), capped', d: Math.round(selX.p * 100) + '%', left: '0', w: (selX.p * scale).toFixed(1), c: 'oklch(0.86 0.11 72)' });
+
+    const counts = { all: all.length };
+    ['A', 'B', 'C', 'D'].forEach((t) => (counts[t] = all.filter((x) => x.l.tier === t).length));
+    const tabs = ['all', 'A', 'B', 'C', 'D'].map((t) => {
+      const on = s.filter === t;
+      return { label: t === 'all' ? 'All leads' : TIER[t].g + ' ' + TIER[t].label, n: counts[t], pick: () => this.setState({ filter: t }),
+        bg: on ? 'oklch(0.94 0.022 80)' : 'transparent', fg: on ? 'oklch(0.2 0.018 50)' : 'oklch(0.94 0.022 80)', border: on ? 'oklch(0.94 0.022 80)' : 'oklch(0.4 0.025 58)' };
+    });
+    const mix = ['A', 'B', 'C', 'D'].filter((t) => counts[t]).map((t, i) => ({ t, n: counts[t], c: TIER[t].c, title: TIER[t].label + ': ' + counts[t], delay: 400 + i * 120 }));
+    const baseCtl = ['A', 'B', 'C', 'D'].map((t) => ({ t, v: Math.round(s.base[t] * 100), set: (e) => { const v = Number(e.target.value) / 100; this.setState((st) => ({ base: { ...st.base, [t]: v } })); } }));
+
+    const now = new Date(s.now);
+    const tick = [...TICK, ...(s.arrived ? ['L-2420 · voice agent · Hamburg 22xxx · new lead'] : [])];
+    const cross = s.cross;
+    return {
+      rootRef: this.rootRef, onRootMove: this.onRootMove, onThermalMove: this.onThermalMove, onThermalLeave: this.onThermalLeave,
+      clock: now.toLocaleTimeString('en-GB'), leadCount: all.length, toast: s.toast, pickNew: () => this.select('L-2420'),
+      pipeStr: fmt(pipe), savedStr: fmt(saved), worthCount: visits.length, heldCount: held.length, mix,
+      cost: s.cost, margin: s.margin, costStr: fmt(s.cost), marginStr: fmt(s.margin), baseCtl,
+      setCost: (e) => this.setState({ cost: Number(e.target.value) }), setMargin: (e) => this.setState({ margin: Number(e.target.value) }),
+      reset: () => this.setState({ cost: DEFAULTS.cost, margin: DEFAULTS.margin, base: { ...DEFAULTS.base } }),
+      tabs, rows, sortBy: sortBy.toLowerCase(),
+      sel: { id: L.id, region: L.region, area: L.area, year: L.year, m2: L.m2, carrier: L.carrier, dist: L.dist, kw: L.kw, range: L.range, unit: L.unit, wpm: Math.round(L.kw * 1000 / L.m2), warm: L.warm,
+        tG: T.g, tLabel: T.label, tC: T.c, tBg: T.bg, action: T.action, reasons: L.reasons, remote: L.remote, onsite: L.onsite, visit: L.visit,
+        evC: selX.ev > 0 ? 'oklch(0.86 0.11 72)' : 'oklch(0.74 0.14 30)', verdictLine: selX.ev > 0 ? 'Worth it' : 'Not worth it yet' },
+      selEvStr: sgn(selEv), selPStr: Math.round(selP), fall,
+      blobs: L.leaks.map(([x, y, sz, o], i) => ({ x, y, s: sz, o, dur: (4 + i * 0.7).toFixed(1) })),
+      maxT: (5 + L.warm * 4 + Math.max(...L.leaks.map((b) => b[3])) * 13).toFixed(1),
+      scanAnim: s.scanN % 2 ? 'scanB' : 'scanA',
+      crossOn: !!cross, cross: cross || { x: 0, y: 0, t: 0 },
+      printBrief: () => window.print(),
+      showTicker: this.props.showTicker ?? true, ticker: [...tick, ...tick],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,36 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap");
+
+/* Hearth theme: cocoa ground, cream/sand ink, amber accent */
+:root {
+  --bg: oklch(0.2 0.018 50);
+  --surface: oklch(0.24 0.02 52);
+  --line: oklch(0.33 0.022 55);
+  --ink: oklch(0.94 0.022 80);
+  --sand: oklch(0.78 0.03 75);
+  --amber: oklch(0.8 0.14 70);
+  --amber-soft: oklch(0.86 0.11 72);
+  --neg: oklch(0.74 0.14 30);
+  --tier-a: oklch(0.82 0.13 150);
+  --tier-b: oklch(0.82 0.09 230);
+  --tier-c: oklch(0.84 0.13 88);
+  --tier-d: oklch(0.76 0.03 70);
+}
 
 body {
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.font-serif-h { font-family: Fraunces, Georgia, serif; }
+.font-mono-h { font-family: "Geist Mono", ui-monospace, monospace; }
+
+@keyframes hpr-rise { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
+@keyframes hpr-grow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@keyframes hpr-ping { 0% { transform: scale(1); opacity: .7 } 100% { transform: scale(2.8); opacity: 0 } }
+@keyframes hpr-drift { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes hpr-scan { 0% { top: -8%; opacity: 0 } 8% { opacity: 1 } 100% { top: 104%; opacity: .6 } }
+@keyframes hpr-breathe { 0%,100% { transform: translate(-50%,-50%) scale(1) } 50% { transform: translate(-50%,-50%) scale(1.07) } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
