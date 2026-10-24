@@ -72,6 +72,24 @@ references for B-04 and B-05 hidden.
 
 All numbers come from the deterministic engine and the challenge's fixed guardrail values. AI never changes a verdict.
 
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Calculation engine (`packages/core`) | TypeScript, pure functions with no machine learning; tested with Vitest |
+| Agent logic (`packages/agent`) | TypeScript: questions, profile, state machine, tools, sales reports; sessions in SQLite (`node:sqlite`) |
+| Orchestrator / API (`services/orchestrator`) | Node.js 26 with plain `node:http`, run via `tsx`; HTTP API, number/verdict guard, ElevenLabs bridge |
+| Tool server (`services/mcp-tools`) | MCP SDK 1.32.1, over stdio or HTTP |
+| AI model | OpenAI `gpt-6-astra`: Responses API for tool calling, Chat Completions for photos and PDFs; swappable to Claude or other OpenAI models by config |
+| Voice | ElevenLabs Conversational AI with our orchestrator as its custom LLM; voice Sarah on `eleven_flash_v2_5` (multilingual); live transcripts over WebSocket |
+| Web app (`app/`) | React 19, Vite 6, Tailwind CSS 4; Hearth theme with Fraunces, Geist and Geist Mono |
+| Map | Leaflet 1.9.4 with OpenStreetMap tiles; addresses via OpenStreetMap Nominatim |
+| Phone app | Flutter (Android) on the same backend API; tested with Maestro |
+| Email reports | nodemailer (SMTP), built but not switched on yet |
+| Hosting (demo) | Mac mini on Tailscale; public address via Tailscale Funnel for ElevenLabs and the phone app |
+| Repo | npm workspaces monorepo; built with Claude Code |
+| Pitch deck | HTML slides printed to PDF with headless Chrome (`submissions/pitch/`) |
+
 ## Repo map
 
 | Path | What |
