@@ -16,8 +16,10 @@ export function saveKeepingPhotos(store: SessionStore, s: Session): void {
     const arrived = new Set<string>();
     for (const lp of latest.profile.photos) {
       const mine = s.profile.photos.find((p) => p.id === lp.id);
-      if (!mine) { s.profile.photos.push(lp); if (lp.finding != null) arrived.add(lp.kind); }
-      else if (mine.finding == null && lp.finding != null) { mine.finding = lp.finding; arrived.add(lp.kind); }
+      if (!mine) { s.profile.photos.push(lp); if (lp.finding != null) arrived.add(lp.kind); continue; }
+      if (mine.finding == null && lp.finding != null) { mine.finding = lp.finding; arrived.add(lp.kind); }
+      // Keep the final analysis state (analysed / stored / failed) so a client poll never falls back to "pending".
+      if (!mine.analysis && lp.analysis) { mine.analysis = lp.analysis; mine.error = lp.error; }
     }
     if (arrived.has('radiator') && latest.profile.pipePhoto) s.profile.pipePhoto = latest.profile.pipePhoto;
     if (arrived.has('meter_cabinet') && latest.profile.meterCabinet) s.profile.meterCabinet = latest.profile.meterCabinet;

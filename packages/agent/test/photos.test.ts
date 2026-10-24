@@ -110,6 +110,20 @@ describe('saving after a long turn keeps what arrived meanwhile', () => {
     expect(saved.profile.outdoor).toEqual({ space1x1: 'yes', neighbourOk: 'yes' });
   });
 
+  it('a failed analysis that ends meanwhile keeps its final state', () => {
+    const { store, id } = setup();
+    const first = store.get(id)!;
+    first.profile.photos.push({ id: 'f1', kind: 'meter_cabinet', path: '/tmp/f1.jpg', at });
+    store.save(first);
+    const turn = store.get(id)!;
+    const background = store.get(id)!;
+    background.profile.photos[0].analysis = 'failed';
+    background.profile.photos[0].error = 'AI not configured';
+    store.save(background);
+    saveKeepingPhotos(store, turn);
+    expect(store.get(id)!.profile.photos[0]).toMatchObject({ analysis: 'failed', error: 'AI not configured' });
+  });
+
   it('a radiator result that lands meanwhile sets the pipe photo', () => {
     const { store, id } = setup();
     const first = store.get(id)!;
