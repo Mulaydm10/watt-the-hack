@@ -225,6 +225,8 @@ Savings = visits per month × 15% × share we catch × cost per failed visit (th
 6. **B-01 is green with low confidence.** Is that the honest message, or should low confidence cap the result at yellow?
 7. What failed-visit numbers can we still get from the organisers before the pitch?
 
+Recommended answers, ranked build list and demo script: [`docs/REFINED_APPROACH.md`](docs/REFINED_APPROACH.md) (24 Oct, ~15:20).
+
 ---
 
 ## Where things are
