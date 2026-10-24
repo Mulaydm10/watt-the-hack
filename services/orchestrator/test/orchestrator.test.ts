@@ -113,3 +113,33 @@ describe('HTTP API', () => {
     expect(r.session_id).toBe(start.session_id);
   });
 });
+
+describe('ElevenLabs custom-LLM bridge', () => {
+  const store = new MemoryStore();
+  const server = buildServer(store, config, new RuleModel());
+  let base = '';
+  beforeAll(async () => { await new Promise<void>((r) => server.listen(0, r)); base = `http://localhost:${(server.address() as AddressInfo).port}`; });
+  afterAll(() => server.close());
+  const turn = (text: string, stream = true) => fetch(`${base}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ stream, messages: [{ role: 'system', content: 'conversation_id: conv_123\nlanguage: en' }, { role: 'user', content: text }] }),
+  });
+
+  it('streams an OpenAI-style SSE reply and keeps one session per ElevenLabs conversation', async () => {
+    const r = await turn('yes');
+    expect(r.headers.get('content-type')).toMatch(/event-stream/);
+    const body = await r.text();
+    expect(body).toMatch(/chat\.completion\.chunk/);
+    expect(body.trim().endsWith('data: [DONE]')).toBe(true);
+    const said = body.split('\n').filter((l) => l.startsWith('data: {')).map((l) => JSON.parse(l.slice(6)).choices[0].delta.content ?? '').join('');
+    expect(said).toMatch(/English or German/);
+    await turn('en');
+    const s = store.get('el-conv_123')!;
+    expect(s.channel).toBe('voice');
+    expect(s.profile.slots.lang.value).toBe('en');
+  });
+  it('non-streaming mode returns a normal completion', async () => {
+    const j = await (await turn('85221', false)).json();
+    expect(j.choices[0].message.content).toMatch(/kind of home/);
+  });
+});

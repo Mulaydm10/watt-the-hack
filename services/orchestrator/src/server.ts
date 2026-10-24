@@ -9,6 +9,7 @@ import { resultAreas } from '@hpr/core/engine/areas';
 import { mergeOutcomeConfig, newSession, OUTCOME_KEYS, outcomeText, progress, deriveState, runTool, SLOTS, toBuilding, type SessionStore, type ToolConfig } from '@hpr/agent';
 import { DATA_DIR, initRuntime, saveOutcomeConfig } from '../../shared/runtime';
 import { handleTurn, startConversation } from './agent';
+import { handleChatCompletions } from './elevenlabs';
 import { defaultModel, type ModelClient } from './model';
 
 type Handler = (req: IncomingMessage, res: ServerResponse, params: string[], url: URL) => Promise<void>;
@@ -139,6 +140,12 @@ export function buildServer(store: SessionStore, config: ToolConfig, model: Mode
       config.outcome = mergeOutcomeConfig(await readJson(req));
       saveOutcomeConfig(config.outcome);
       json(res, 200, { config: config.outcome });
+    }],
+    ['POST', /^\/v1\/chat\/completions$/, async (req, res) => {
+      // ElevenLabs custom-LLM endpoint (optional bearer token ELEVENLABS_LLM_TOKEN).
+      const token = process.env.ELEVENLABS_LLM_TOKEN;
+      if (token && req.headers.authorization !== `Bearer ${token}`) return json(res, 401, { error: 'unauthorized' });
+      await handleChatCompletions(req, res, await readJson(req), store, config, model);
     }],
     ['GET', /^\/health$/, async (_req, res) => json(res, 200, { ok: true, mail: Boolean(config.mail), webhook: Boolean(config.webhookUrl) })],
   ];
