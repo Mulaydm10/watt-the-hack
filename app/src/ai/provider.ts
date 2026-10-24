@@ -8,7 +8,7 @@ const env = import.meta.env;
 const PROVIDER = ((env.VITE_LLM_PROVIDER as string) || 'claude').toLowerCase() as 'claude' | 'openai' | 'astra';
 const KEY = env.VITE_LLM_API_KEY as string | undefined;
 const BASE_URL = (env.VITE_LLM_BASE_URL as string | undefined) || (PROVIDER === 'openai' ? 'https://api.openai.com/v1' : undefined);
-const MODEL = (env.VITE_LLM_MODEL as string | undefined) || (PROVIDER === 'claude' ? 'claude-sonnet-5-5' : 'gpt-4o');
+const MODEL = (env.VITE_LLM_MODEL as string | undefined) || (PROVIDER === 'claude' ? 'claude-sonnet-5-5' : 'gpt-6-astra');
 const TIMEOUT_MS = 30_000;
 
 export const providerName = () => PROVIDER;
