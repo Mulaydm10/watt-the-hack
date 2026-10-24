@@ -34,3 +34,95 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
+
+/* ------------------------------------------------------------------------------------------------
+   Hearth theme for every page. Unlayered rules beat Tailwind's utility layer, so the existing class names
+   (white cards, slate text, emerald buttons, tinted panels) are re-coloured here in one place.
+   Scoped to .hearth (set on the app root). Print stays black on white for the technician briefing.
+   ------------------------------------------------------------------------------------------------ */
+.hearth {
+  --surface-2: oklch(0.28 0.022 54);
+  --surface-3: oklch(0.31 0.024 55);
+  --muted: oklch(0.66 0.03 72);
+  --amber-ink: oklch(0.22 0.03 55);
+  --ok-tint: oklch(0.3 0.05 150);
+  --ok-ink: oklch(0.86 0.1 150);
+  --warn-tint: oklch(0.32 0.06 85);
+  --warn-ink: oklch(0.88 0.11 88);
+  --bad-tint: oklch(0.3 0.06 28);
+  --bad-ink: oklch(0.84 0.1 30);
+  --info-tint: oklch(0.3 0.04 230);
+  --info-ink: oklch(0.86 0.07 230);
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: dark;
+}
+.hearth h1, .hearth h2 { font-family: Fraunces, Georgia, serif; font-weight: 600; letter-spacing: -0.01em; }
+
+/* surfaces */
+.hearth .bg-slate-50 { background-color: var(--bg); }
+.hearth .bg-white { background-color: var(--surface); }
+.hearth .bg-slate-100 { background-color: var(--surface-2); }
+.hearth .bg-slate-200 { background-color: var(--surface-3); }
+.hearth .hover\:bg-slate-50:hover { background-color: var(--surface-2); }
+.hearth .hover\:bg-slate-200:hover { background-color: var(--surface-3); }
+.hearth .bg-black\/30 { background-color: oklch(0.1 0.01 50 / 0.55); }
+
+/* selected chips / dark buttons → amber with dark ink */
+.hearth .bg-slate-700, .hearth .bg-slate-800, .hearth .bg-slate-900 { background-color: var(--amber); color: var(--amber-ink); }
+.hearth .bg-slate-700.text-white, .hearth .bg-slate-800.text-white, .hearth .bg-slate-900.text-white { color: var(--amber-ink); }
+
+/* primary buttons (emerald) → amber */
+.hearth .bg-emerald-600 { background-color: var(--amber); }
+.hearth .bg-emerald-600.text-white, .hearth .bg-emerald-600 .text-white { color: var(--amber-ink); }
+.hearth .hover\:bg-emerald-700:hover { background-color: var(--amber-soft); }
+.hearth .hover\:ring-emerald-400:hover { --tw-ring-color: var(--amber); }
+
+/* text */
+.hearth .text-slate-900, .hearth .text-slate-800, .hearth .text-slate-700 { color: var(--ink); }
+.hearth .text-slate-600, .hearth .text-slate-500 { color: var(--sand); }
+.hearth .text-slate-400 { color: var(--muted); }
+.hearth .hover\:text-slate-900:hover, .hearth .hover\:text-slate-800:hover { color: var(--ink); }
+.hearth .text-emerald-600, .hearth .text-emerald-700, .hearth .text-emerald-800 { color: var(--amber-soft); }
+.hearth .hover\:text-emerald-900:hover { color: var(--amber); }
+.hearth .text-amber-700, .hearth .text-amber-800, .hearth .text-amber-900 { color: var(--warn-ink); }
+.hearth .text-rose-700, .hearth .text-rose-800 { color: var(--bad-ink); }
+.hearth .text-sky-800 { color: var(--info-ink); }
+
+/* lines */
+.hearth .ring-slate-200 { --tw-ring-color: var(--line); }
+.hearth .border-slate-100, .hearth .border-slate-200, .hearth .border-slate-300 { border-color: var(--line); }
+.hearth .border-b, .hearth .border-t, .hearth .border { border-color: var(--line); }
+
+/* tinted status panels and badges */
+.hearth .bg-emerald-50, .hearth .bg-emerald-100 { background-color: var(--ok-tint); color: var(--ok-ink); }
+.hearth .bg-amber-50, .hearth .bg-amber-100 { background-color: var(--warn-tint); color: var(--warn-ink); }
+.hearth .bg-rose-50, .hearth .bg-rose-100 { background-color: var(--bad-tint); color: var(--bad-ink); }
+.hearth .bg-sky-100 { background-color: var(--info-tint); color: var(--info-ink); }
+.hearth .ring-emerald-200 { --tw-ring-color: oklch(0.45 0.08 150); }
+.hearth .ring-amber-200 { --tw-ring-color: oklch(0.5 0.09 85); }
+.hearth .ring-rose-200 { --tw-ring-color: oklch(0.48 0.09 28); }
+.hearth .border-amber-300 { border-color: var(--amber); }
+.hearth .border-rose-400 { border-color: var(--neg); }
+.hearth .border-violet-400 { border-color: oklch(0.72 0.1 300); }
+
+/* form controls */
+.hearth input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.hearth select, .hearth textarea {
+  background-color: var(--surface-2); color: var(--ink); border-color: var(--line);
+}
+.hearth input::placeholder, .hearth textarea::placeholder { color: var(--muted); }
+.hearth input[type="checkbox"], .hearth input[type="radio"], .hearth input[type="range"] { accent-color: var(--amber); }
+.hearth input[type="file"] { color: var(--sand); }
+.hearth :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+/* keep traffic-light dots true to colour (green / yellow / red) */
+.hearth .bg-emerald-500 { background-color: oklch(0.72 0.17 150); }
+.hearth .bg-amber-400 { background-color: oklch(0.83 0.16 85); }
+.hearth .bg-rose-500 { background-color: oklch(0.66 0.2 25); }
+
+/* printing (technician briefing): back to black on white */
+@media print {
+  .hearth, .hearth * { background: #fff !important; color: #000 !important; box-shadow: none !important; }
+  .hearth .ring-1, .hearth .ring-4 { --tw-ring-color: #ccc !important; }
+}

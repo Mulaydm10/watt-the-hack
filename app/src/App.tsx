@@ -91,7 +91,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen font-sans bg-slate-50 text-slate-900">
+    <div className="hearth min-h-screen font-sans bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <button onClick={() => setView({ kind: 'home' })} className="text-lg font-bold">Heat Pump Ready<span className="text-emerald-600">?</span></button>
