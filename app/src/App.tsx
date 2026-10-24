@@ -76,7 +76,8 @@ export default function App() {
   const [cfg, setCfg] = useState(loadConfig);
   const isSales = view.kind === 'sales' || view.kind === 'brief';
   useEffect(() => {
-    const sync = () => { if (location.hash === '#/sales') setView({ kind: 'sales' }); };
+    const sync = () => setView((v) =>
+      location.hash === '#/sales' ? (v.kind === 'brief' ? v : { kind: 'sales' }) : (v.kind === 'sales' || v.kind === 'brief' ? { kind: 'home' } : v));
     sync();
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
