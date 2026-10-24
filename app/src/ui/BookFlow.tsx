@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { assess } from '../engine/assess';
 import type { Assessment, Building, PhotoFindings } from '../engine/types';
-import { priceBand, serviceArea, sizeToUnits, subsidyEstimate } from '../sales/offer';
+import { COST_DRIVERS, NUU_PAYBACK, PAYMENT_TERMS, priceBand, serviceArea, sizeToUnits, subsidyEstimate, type IncomeBand } from '../sales/offer';
 import { loadConfig } from '../sales/store';
 import { NO_COMMITMENT, NO_PRECHECK, type Commitment, type Lead, type PreCheck, type YesNoUnsure } from '../sales/types';
 
@@ -31,24 +31,39 @@ function PhotoTask({ title, why, done, children }: { title: string; why: string;
   );
 }
 
-/** Homeowner-only price and subsidy preview. The income checkbox never leaves this component. */
-function PricePreview({ a, building, boilerOld }: { a: Assessment; building: Building; boilerOld: boolean }) {
-  const [incomeBonus, setIncomeBonus] = useState(false);
+/** Homeowner-only price and subsidy preview. Income and child answers never leave this component. */
+function PricePreview({ a, building, boilerOld, ownership }: { a: Assessment; building: Building; boilerOld: boolean; ownership: Commitment['ownership'] }) {
+  const [income, setIncome] = useState<IncomeBand>('not-said');
+  const [child, setChild] = useState(false);
   const size = sizeToUnits(a.heatLoad.bestKw, a.heatLoad.range?.high);
   const band = priceBand(size.units[0]);
   const area = serviceArea(building.location);
-  const sub = subsidyEstimate({ oldBoiler20Plus: boilerOld, incomeBonus, region: area.region });
+  const ownerOccupied = ownership == null ? null : ownership === 'owner' || ownership === 'co-owner';
+  const sub = subsidyEstimate({ ownerOccupied, oldBoiler20Plus: boilerOld, income, minorChild: child, region: area.region });
   const saving = a.costs && a.costs.currentEur != null ? a.costs.currentEur - a.costs.heatPumpEurWorst : null;
   const eur = (n: number) => `€${n.toLocaleString('en-US')}`;
   return (
     <div className="rounded-xl bg-emerald-50 p-4 text-sm">
-      <p className="font-semibold">Rough price and subsidy preview</p>
+      <p className="font-semibold">Rough price and subsidy preview <span className="font-normal text-slate-500">(rough guide, before subsidy; final price after the on-site visit)</span></p>
       {size.units.length > 0 && <p>Likely size: <b>{size.units.join(' or ')} kW</b>. {size.note}</p>}
-      <p>Typical price before subsidy: <b>{eur(band.low)}–{eur(band.high)}</b> ({band.label}). A meter-cabinet upgrade can add to this.</p>
+      <p>Typical gross price: <b>{eur(band.low)}–{eur(band.high)}</b> ({band.label}).</p>
+      <p className="text-slate-600">Cost drivers: {COST_DRIVERS.join(', ')}. Payment: {PAYMENT_TERMS}.</p>
+      <p className="mt-2 font-medium">Subsidy (KfW 458; check current rules, nuuEnergy confirms)</p>
       <ul className="list-disc pl-5">{sub.lines.map((l) => <li key={l}>{l}</li>)}</ul>
-      <label className="mt-1 flex items-center gap-2"><input type="checkbox" checked={incomeBonus} onChange={(e) => setIncomeBonus(e.target.checked)} /> My household income may qualify for the income bonus (stays on this device, never sent).</label>
-      {saving != null && <p className="mt-1">Running costs: about <b>{eur(saving)}</b> less per year than today (worst case).</p>}
-      <p className="mt-1 font-semibold text-amber-800">Apply for the subsidy before you order, or it is lost. Check current rules.</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <span>Optional income-bonus calculator (taxable household income, stays on this device, never sent):</span>
+        <select className="rounded border px-2 py-1" value={income} onChange={(e) => setIncome(e.target.value as IncomeBand)}>
+          <option value="not-said">Prefer not to say</option>
+          <option value="le30">up to €30k</option>
+          <option value="30to40">€30–40k</option>
+          <option value="40to50">€40–50k</option>
+          <option value="gt50">over €50k</option>
+        </select>
+        <label className="flex items-center gap-1"><input type="checkbox" checked={child} onChange={(e) => setChild(e.target.checked)} /> minor child in the household</label>
+      </div>
+      {saving != null && <p className="mt-2">Running costs (our calculation): about <b>{eur(saving)}</b> less per year than today (worst case).</p>}
+      <p className="text-slate-600">{NUU_PAYBACK}</p>
+      <p className="mt-1 font-semibold text-amber-800">"Antrag vor Auftrag": apply for the subsidy before you place the order, or it is lost.</p>
     </div>
   );
 }
@@ -89,9 +104,12 @@ export function BookFlow({ building, photo, onDone, onCancel }: { building: Buil
             <input type="file" accept="image/*" multiple className="mb-2 block text-sm" onChange={() => pre.outdoorSpot == null && setPre({ ...pre, outdoorSpot: { space1x1: 'unsure', neighbourOk: 'unsure' } })} />
             <div className="grid gap-3 sm:grid-cols-2">
               <Choice label="Free space of at least 1 × 1 m?" none="No photo" value={pre.outdoorSpot?.space1x1 ?? null} options={YNU}
-                onChange={(v) => setPre({ ...pre, outdoorSpot: v ? { space1x1: v, neighbourOk: pre.outdoorSpot?.neighbourOk ?? 'unsure' } : null })} />
-              <Choice label="Keeps the minimum distance to the neighbour? (noise rules are the homeowner's responsibility)" none="No photo" value={pre.outdoorSpot?.neighbourOk ?? null} options={YNU}
-                onChange={(v) => setPre({ ...pre, outdoorSpot: v ? { space1x1: pre.outdoorSpot?.space1x1 ?? 'unsure', neighbourOk: v } : null })} />
+                onChange={(v) => setPre({ ...pre, outdoorSpot: v ? { ...pre.outdoorSpot, space1x1: v, neighbourOk: pre.outdoorSpot?.neighbourOk ?? 'unsure' } : null })} />
+              <Choice label="House type" none="Not sure" value={pre.outdoorSpot?.houseType ?? null}
+                options={[['detached', 'Detached'], ['semi', 'Semi-detached'], ['terraced', 'Terraced'], ['multi', 'Multi-family']]}
+                onChange={(v) => setPre({ ...pre, outdoorSpot: { space1x1: pre.outdoorSpot?.space1x1 ?? 'unsure', neighbourOk: pre.outdoorSpot?.neighbourOk ?? 'unsure', houseType: v ?? undefined } })} />
+              <Choice label="Keeps the minimum distance to the neighbour's boundary? (noise rules are the homeowner's responsibility)" none="No photo" value={pre.outdoorSpot?.neighbourOk ?? null} options={YNU}
+                onChange={(v) => setPre({ ...pre, outdoorSpot: v ? { ...pre.outdoorSpot, space1x1: pre.outdoorSpot?.space1x1 ?? 'unsure', neighbourOk: v } : null })} />
             </div>
           </PhotoTask>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -116,7 +134,7 @@ export function BookFlow({ building, photo, onDone, onCancel }: { building: Buil
           <p className="text-xs text-slate-500">Subsidy info: see the BAFA/KfW heat-pump funding pages (check current rules).</p>
           <Choice label="Would you share extra photos now so the visit is shorter?" value={c.sharePhotos} onChange={(v) => set({ sharePhotos: v })} options={[['yes', 'Yes'], ['later', 'Later']]} />
 
-          <PricePreview a={a} building={building} boilerOld={c.boiler === 'over20' || c.boiler === 'broken'} />
+          <PricePreview a={a} building={building} boilerOld={c.boiler === 'over20'} ownership={c.ownership} />
 
           <div className="rounded-xl bg-amber-50 p-4 text-sm">
             <p className="font-semibold">Please check your details</p>

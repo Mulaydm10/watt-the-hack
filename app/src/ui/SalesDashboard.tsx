@@ -85,7 +85,7 @@ export function SalesDashboard({ cfg, setCfg, onBrief }: { cfg: SalesConfig; set
                   <td className="px-3 py-2">{data}%</td>
                   <td className="px-3 py-2">{d.commitment}</td>
                   <td className="px-3 py-2">{d.preCheck}%</td>
-                  <td className="px-3 py-2"><span className={`rounded px-2 py-0.5 text-xs font-semibold ${TIER_STYLE[d.tier]}`}>{d.outOfArea ? 'Outside our service area' : TIER_INFO[d.tier].label}</span></td>
+                  <td className="px-3 py-2"><span className={`rounded px-2 py-0.5 text-xs font-semibold ${TIER_STYLE[d.tier]}`}>{d.outOfArea ? 'Outside nuuEnergy service area' : TIER_INFO[d.tier].label}</span></td>
                   <td className={`px-3 py-2 font-semibold ${d.worthIt ? 'text-emerald-700' : 'text-slate-500'}`}>{d.expectedValueEur >= 0 ? '+' : '−'}€{Math.abs(d.expectedValueEur).toLocaleString('en-US')}<br /><span className="text-xs font-normal">{d.worthIt ? 'Worth it' : 'Not worth it yet'}</span></td>
                   <td className="px-3 py-2 text-slate-600">{d.reasons[0]}</td>
                   <td className="px-3 py-2 whitespace-nowrap">

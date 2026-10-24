@@ -30,7 +30,7 @@ export function Briefing({ lead, cfg, onBack }: { lead: Lead; cfg: SalesConfig; 
       <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 print:p-0 print:shadow-none print:ring-0">
         <header className="flex items-start justify-between border-b pb-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Technician briefing</p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Briefing for the Heizungsbaumeister</p>
             <h1 className="text-2xl font-bold">{lead.id} · {b.location || 'area not given'}</h1>
           </div>
           <div className="text-right text-sm">

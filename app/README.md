@@ -7,7 +7,7 @@ what we can't tell yet, technician checklist and yearly running costs.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 62 tests (engine, bad input, AI guard, path to green, sales tiers, offer rules)
+npm test           # 65 tests (engine, bad input, AI guard, path to green, sales tiers, offer rules)
 npm run build
 ```
 Optional AI helper: copy `.env.example` to `.env` and set
@@ -69,11 +69,12 @@ Two users, one engine:
    button leads to a remote photo pre-check and a few optional questions about their plans.
 2. **nuuEnergy sales** (header toggle "Sales view", or `#/sales`; would be behind a login) sees every
    lead with a visit decision mapped to nuuEnergy's own process:
-   - **A: Book on-site visit** (~2 h heating-master visit)
-   - **B: Phone call first** (~30-min technical planning call)
-   - **C: Ask for info first** (contradictions, tenant without owner, no heat-load data)
-   - **D: Not now** (red obstacle, "just curious"), or **Outside our service area** (Munich, Hamburg,
-     Lower Bavaria by postcode); that one is a logistics fact, never a lead-quality label.
+   - **A: Book the on-site heat-load visit** (~2 h Heizungsbaumeister visit)
+   - **B: 30-min technical phone call first** (their existing planning-office call)
+   - **C: Ask for missing info / photos** (contradictions, tenant without owner, no heat-load data)
+   - **D: Not now: info and subsidy guide** (red obstacle, "just curious"), or **Outside nuuEnergy service
+     area** (Greater Munich 80-83/85, Greater Hamburg 20-22, Lower Bavaria 84/94 by postcode; approximate,
+     nuuEnergy to confirm). That one is a logistics fact, never a lead-quality label.
    Each decision has a "Why?" panel, the P(sale) steps and the expected value
    `P(sale) × margin − visit cost`. A/B leads get a printable technician briefing (window.print).
 
@@ -85,8 +86,11 @@ The technical traffic light is never changed by sales logic (tested for all 5 ho
 - P(sale) nudges per signal (owner, timeline, boiler age, pre-check, verdict) and the 5–90 % cap.
 - Tier A needs ≥ 60 % remote pre-check (meter cabinet 30, outdoor spot 25, bill 20, radiators 15, boiler room 10).
 - Units 5/7/10/12/16/20 kW, published price bands (€29–34k small, €35–45k bigger, before subsidy),
-  KfW 458 2026 subsidy rules (30 % + 16 % old-boiler bonus + up to 40 % income bonus, max 70 % on max €28k;
-  Munich +15 %, Hamburg +20 % city programmes). Always labelled "check current rules";
+  KfW 458 rules of 21 Jul 2026 (30 % base for owner-occupied, +16 % climate-speed bonus for an oil/gas boiler
+  ≥ 20 years, staged income bonus 40/30/10/0 % with a €10k shift for a minor child, max 70 % on max €28k per unit;
+  Munich FKG up to +15 % filling to 60 %, Hamburg IFB +20 % max €9k excluding speed/income bonus).
+  Size maps to their units: "exact size only after the on-site heat-load calculation", never bigger to be safe.
+  The outdoor step asks house type and distance to the neighbour's boundary → "tight placement, noise check needed". Always labelled "check current rules";
   apply before ordering or the subsidy is lost.
 - "Visit fee credited if you buy" is **off by default**: nuuEnergy promises a free, no-obligation check.
 

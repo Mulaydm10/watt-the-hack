@@ -46,7 +46,7 @@ describe('visit decision tiers', () => {
     const d = visitDecision(lead({ ...byId('B-02'), location: 'Cologne area (50xxx)' }, COMMITTED, FULL_PRE));
     expect(d.tier).toBe('D');
     expect(d.outOfArea).toBe(true);
-    expect(d.reasons[0]).toMatch(/Outside our service area/);
+    expect(d.reasons[0]).toMatch(/Outside nuuEnergy service area/);
   });
   it('all 5 test houses are inside the service area', () => {
     for (const b of all) expect(visitDecision(lead(b)).outOfArea).toBe(false);

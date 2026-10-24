@@ -17,12 +17,18 @@ export type Commitment = {
 
 export const NO_COMMITMENT: Commitment = { ownership: null, boiler: null, timeline: null, decisionMakers: null, subsidiesLooked: null, sharePhotos: null };
 
+export type HouseType = 'detached' | 'semi' | 'terraced' | 'multi';
+
+/** Terraced/semi houses or a doubtful neighbour distance: tight placement, noise check (TA Lärm) needed. */
+export const tightPlacement = (o: PreCheck['outdoorSpot']) =>
+  o != null && (o.houseType === 'semi' || o.houseType === 'terraced' || o.neighbourOk === 'no' || o.space1x1 === 'no');
+
 export type MeterCabinet = 'modern' | 'old-or-full' | 'unclear';
 
 /** Remote pre-check: photo tasks the homeowner can do from the phone. */
 export type PreCheck = {
   meterCabinet: MeterCabinet | null; // null = not provided
-  outdoorSpot: { space1x1: YesNoUnsure; neighbourOk: YesNoUnsure } | null;
+  outdoorSpot: { space1x1: YesNoUnsure; neighbourOk: YesNoUnsure; houseType?: HouseType } | null;
   boilerRoomPhoto: boolean;
   radiatorPhoto: boolean;
 };

@@ -59,9 +59,16 @@ export const DEFAULT_CONFIG: SalesConfig = {
   visitMinutesMin: 60,
 };
 
+/** Service area by the first two postcode digits. Approximate, nuuEnergy to confirm. */
+export const SERVICE_AREA: Record<string, string[]> = {
+  'Munich area': ['80', '81', '82', '83', '85'],
+  'Lower Bavaria': ['84', '94'],
+  'Hamburg area': ['20', '21', '22'],
+};
+
 export const TIER_INFO: Record<Tier, { label: string; action: string }> = {
-  A: { label: 'A: Book on-site visit', action: 'Book the ~2-hour visit by the heating master (heat-load calculation and feasibility check).' },
-  B: { label: 'B: Phone call first', action: 'Do the ~30-minute technical phone call with the planning team; book the visit when the gaps close.' },
-  C: { label: 'C: Ask for info first', action: 'Send an automated message asking for the missing information or photos.' },
-  D: { label: 'D: Not now', action: 'Send the info pack and subsidy guide; re-contact later. Never "rejected".' },
+  A: { label: 'A: Book the on-site heat-load visit', action: 'Book the ~2-hour Heizungsbaumeister visit (heat-load calculation and feasibility check).' },
+  B: { label: 'B: 30-min technical phone call first', action: 'Their existing ~30-minute call with the technical planning office; upgrade to a visit when the gaps close.' },
+  C: { label: 'C: Ask for missing info / photos', action: 'Send an automated message asking for the missing information or photos.' },
+  D: { label: 'D: Not now: info and subsidy guide', action: 'Send the info pack and subsidy guide; re-contact later. Never "rejected".' },
 };

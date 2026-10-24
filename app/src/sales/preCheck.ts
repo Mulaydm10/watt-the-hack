@@ -1,5 +1,5 @@
 import type { Assessment, Building } from '../engine/types';
-import type { PreCheck } from './types';
+import { tightPlacement, type PreCheck } from './types';
 
 type Task = { key: string; title: string; weight: number; done: boolean; finding: string; siteCheck: string };
 
@@ -17,7 +17,7 @@ export function preCheckTasks(b: Building, a: Assessment, p: PreCheck): Task[] {
     {
       key: 'outdoor', title: 'Outdoor-unit spot photo', weight: 25, done: p.outdoorSpot != null,
       finding: p.outdoorSpot
-        ? `Space ≥ 1 × 1 m: ${p.outdoorSpot.space1x1}; distance to neighbour OK: ${p.outdoorSpot.neighbourOk} (rough hint, technician confirms).`
+        ? `Space ≥ 1 × 1 m: ${p.outdoorSpot.space1x1}; minimum distance to neighbour's boundary: ${p.outdoorSpot.neighbourOk}${p.outdoorSpot.houseType ? `; house: ${p.outdoorSpot.houseType}` : ''}.${tightPlacement(p.outdoorSpot) ? ' Tight placement, noise check needed (TA Lärm; neighbour/noise compliance is the customer\'s responsibility, AGB 7.7).' : ''} Rough hint, technician confirms.`
         : 'Not provided.',
       siteCheck: 'Outdoor-unit location',
     },

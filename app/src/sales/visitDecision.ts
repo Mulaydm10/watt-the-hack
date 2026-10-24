@@ -49,7 +49,7 @@ export function visitDecision(lead: Lead, cfg: SalesConfig = DEFAULT_CONFIG, a: 
 
   // Outside nuuEnergy's service area: they cannot send an expert. A logistics fact, not a lead-quality judgement.
   if (area.status === 'out') {
-    reasons.push('Outside our service area (Munich, Hamburg, Lower Bavaria): we cannot send an expert. Refer to a local installer.');
+    reasons.push('Outside nuuEnergy service area (Greater Munich, Greater Hamburg, Lower Bavaria): no expert can be sent. Refer to a local installer.');
     tier = 'D';
   }
 
