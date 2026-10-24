@@ -3,6 +3,7 @@ import { costs } from './costs';
 import { flags } from './flags';
 import { heatLoad } from './heatLoad';
 import { radiators } from './radiators';
+import { sanitize } from './sanitize';
 import type { Assessment, Building, PhotoFindings, PipeSystem } from './types';
 import { verdict } from './verdict';
 
@@ -15,7 +16,8 @@ export function resolvePipe(b: Building, photo?: PhotoFindings): { value: PipeSy
   return { value: 'unknown', source: photo ? 'photos inconclusive' : 'not documented' };
 }
 
-export function assess(b: Building, photo?: PhotoFindings): Assessment {
+export function assess(input: Building, photo?: PhotoFindings): Assessment {
+  const b = sanitize(input);
   const pipe = resolvePipe(b, photo);
   const h = heatLoad(b);
   const r = radiators(b, h, pipe.value);

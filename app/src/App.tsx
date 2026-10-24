@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Component, useState, type ReactNode } from 'react';
 import dev from './data/buildings_dev.json';
 import evalSet from './data/buildings_eval.json';
 import { assess } from './engine/assess';
@@ -9,7 +9,23 @@ import { Wizard } from './ui/Wizard';
 const DEMOS = [...(dev as Building[]), ...(evalSet as Building[])];
 const DOT = { green: 'bg-emerald-500', yellow: 'bg-amber-400', red: 'bg-rose-500' };
 
-type View = { kind: 'home' } | { kind: 'wizard' } | { kind: 'eval' } | { kind: 'result'; b: Building; a: Assessment };
+/** Keeps a live demo alive: any render error shows a recoverable card instead of a blank page. */
+class Guard extends Component<{ children: ReactNode; onReset: () => void }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-rose-200">
+        <p className="font-semibold text-rose-700">Something went wrong showing this result.</p>
+        <p className="text-sm text-slate-500">{this.state.error.message}</p>
+        <button className="mt-3 rounded-lg bg-slate-800 px-4 py-2 text-white" onClick={() => { this.setState({ error: null }); this.props.onReset(); }}>Back to start</button>
+      </div>
+    );
+  }
+}
+
+type View ={ kind: 'home' } | { kind: 'wizard' } | { kind: 'eval' } | { kind: 'result'; b: Building; a: Assessment };
 
 function EvalTable({ onOpen }: { onOpen: (b: Building) => void }) {
   return (
@@ -56,7 +72,7 @@ export default function App() {
           <button onClick={() => setView({ kind: 'eval' })} className="text-sm text-slate-600 hover:text-slate-900">All 5 buildings</button>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8"><Guard onReset={() => setView({ kind: 'home' })}>
         {view.kind === 'home' && (
           <div className="space-y-8">
             <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
@@ -81,7 +97,7 @@ export default function App() {
         {view.kind === 'wizard' && <Wizard onDone={open} />}
         {view.kind === 'eval' && <EvalTable onOpen={(b) => open(b)} />}
         {view.kind === 'result' && <Result a={view.a} b={view.b} onBack={() => setView({ kind: 'home' })} />}
-      </main>
+      </Guard></main>
     </div>
   );
 }

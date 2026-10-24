@@ -72,6 +72,10 @@ export function methodB(b: Building): HeatLoad['methodB'] {
   } else if (b.hot_water_via_heating == null) {
     steps.push('Hot water via heating unknown: no hot-water deduction made.');
   }
+  if (heat <= 0) {
+    steps.push('Hot-water deduction is larger than the useful heat: the bill cannot be right, so no load is derived from it.');
+    heat = 0;
+  }
   const kw = heat / FULL_LOAD_HOURS;
   steps.push(`÷ ${fmt(FULL_LOAD_HOURS)} full-load hours = ${round1(kw)} kW`);
   return { kw: round1(kw), wPerM2: Math.round((kw * 1000) / b.floor_area_m2), usefulHeatKwh: Math.round(useful), steps };

@@ -32,6 +32,7 @@ export async function askJson<T>(system: string, content: Content[]): Promise<T>
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
+    signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, messages: [{ role: 'user', content }] }),
   });
   if (!res.ok) throw new Error(`LLM error ${res.status}`);

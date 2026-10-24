@@ -43,9 +43,10 @@ describe('guardrail formulas', () => {
 });
 
 describe('eval buildings', () => {
-  it('B-04: confirmed single-pipe is an obstacle (red)', () => {
+  it('B-04: confirmed single-pipe is an obstacle shown as yellow + strong warning', () => {
     const a = assess(byId('B-04'));
-    expect(a.verdict).toBe('red');
+    expect(a.verdict).toBe('yellow');
+    expect(a.verdictReasons.join(' ')).toMatch(/Strong warning: Single-pipe/);
     expect(a.flags.obstacles[0].title).toMatch(/Single-pipe/);
   });
   it('B-05: yellow with contradictions (methods 2× apart, room count)', () => {
@@ -72,6 +73,10 @@ describe('uncertainty handling', () => {
   it('low-confidence photo stays unknown', () => {
     const a = assess(byId('B-05'), { label: 'single-pipe', confidence: 0.5, evidence: [], source: 'ai' });
     expect(a.pipeSystem.value).toBe('unknown');
+  });
+  it('a known obstacle that is not single-pipe still gives red', () => {
+    const b = { ...byId('B-03'), building_notes: 'No space for an outdoor unit.' };
+    expect(assess(b).verdict).toBe('red');
   });
   it('meter cabinet is on every checklist', () => {
     for (const b of [...devB, ...evalB]) expect(assess(b).flags.technicianChecks[0].title).toMatch(/Meter cabinet/);

@@ -26,7 +26,7 @@ export const LIKELY_ABOVE_55_W_PER_M2 = 60;
 export const PHOTO_MIN_CONFIDENCE = 0.7;
 
 /** Confirmed single-pipe: the #1 no-go. Flip to 'yellow' before the pitch if wanted. */
-export const SINGLE_PIPE_VERDICT: 'red' | 'yellow' = 'red';
+export const SINGLE_PIPE_VERDICT: 'red' | 'yellow' = 'yellow';
 
 /** W/m² bands by building age (Guardrails 1a). */
 export const BANDS = {

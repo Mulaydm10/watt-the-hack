@@ -28,6 +28,7 @@ export function verdict(h: HeatLoad, r: Radiators, f: Flags, pipe: PipeSystem): 
     if (h.bestWPerM2 != null && h.bestWPerM2 > INSULATION_HINT_W_PER_M2) reasons.push(`Heat load of ${h.bestWPerM2} W/m² is on the high side.`);
     if (h.bestKw == null) reasons.push('Not enough data to estimate the heat load.');
     v = f.obstacles.length || reasons.length ? 'yellow' : 'green';
+    if (f.obstacles.length) reasons.push('A technician must check this before a heat pump is planned; it may still work after changes.');
     if (v === 'green') {
       reasons.push(`Estimated heat load ${h.bestKw} kW (${h.bestWPerM2} W/m²) is moderate.`);
       reasons.push(r.jaz >= 4 ? 'Underfloor heating suits a heat pump well.' : 'Radiators can likely run at ≤ 55 °C.');
@@ -40,7 +41,9 @@ export function verdict(h: HeatLoad, r: Radiators, f: Flags, pipe: PipeSystem): 
 
   const headline = {
     green: 'A heat pump looks likely suitable for this home.',
-    yellow: 'A heat pump is potentially suitable, but important checks remain.',
+    yellow: f.obstacles.length
+      ? 'Potentially suitable, but there is a known obstacle a technician must check first.'
+      : 'A heat pump is potentially suitable, but important checks remain.',
     red: 'Not a clean yes: there is a known obstacle a technician must look at first.',
   }[v];
   return { verdict: v, confidence, reasons, headline };
