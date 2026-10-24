@@ -221,3 +221,32 @@ describe('ElevenLabs bridge: session matching and language switch', () => {
     expect(sessions[0].speak).toBe('fr');
   });
 });
+
+describe('voice "one moment" filler', () => {
+  class SlowModel extends RuleModel {
+    async complete(...a: Parameters<RuleModel['complete']>) { await new Promise((r) => setTimeout(r, 120)); return super.complete(...a); }
+  }
+  const spoken = (sse: string) => sse.split('\n').filter((l) => l.startsWith('data: {')).map((l) => JSON.parse(l.slice(6)).choices[0].delta.content ?? '').join('');
+  const run = async (model: RuleModel, text: string) => {
+    const store = new MemoryStore();
+    const server = buildServer(store, config, model);
+    await new Promise<void>((r) => server.listen(0, r));
+    const base = `http://localhost:${(server.address() as AddressInfo).port}`;
+    const sse = await fetch(`${base}/v1/chat/completions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stream: true, messages: [{ role: 'system', content: 'conversation_id: fillertest1' }, { role: 'user', content: text }] }) }).then((r) => r.text());
+    server.close();
+    return spoken(sse);
+  };
+  it('a slow turn starts with "one moment" in the caller\'s language, then the real answer', async () => {
+    process.env.EL_FILLER_MS = '30';
+    process.env.EL_FILLER2_MS = '100000';
+    const said = await run(new SlowModel(), 'Ja, gerne, wir können anfangen');
+    expect(said).toMatch(/^Einen Moment bitte\. /);
+    expect(said.length).toBeGreaterThan('Einen Moment bitte. '.length);
+  });
+  it('a fast turn gets no filler', async () => {
+    process.env.EL_FILLER_MS = '5000';
+    const said = await run(new RuleModel(), 'Yes please, we can start now');
+    expect(said).not.toMatch(/One moment|Einen Moment/);
+    delete process.env.EL_FILLER_MS; delete process.env.EL_FILLER2_MS;
+  });
+});

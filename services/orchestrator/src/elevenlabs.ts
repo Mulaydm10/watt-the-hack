@@ -66,20 +66,75 @@ export async function handleChatCompletions(_req: IncomingMessage, res: ServerRe
   }
 
   const before = s.speak ?? s.lang;
-  let reply = '';
-  if (userText) reply = (await handleTurn(s, userText, model, config)).reply;
-  store.save(s);
-
-  const after = s.speak ?? s.lang;
+  const session = s;
   const canSwitch = body.tools?.some((t) => t.function?.name === 'language_detection');
-  const switchTo = canSwitch && after !== before ? after : null;
-  return send(res, body, id, mdl, reply, switchTo);
+  const turn = (async () => {
+    const reply = userText ? (await handleTurn(session, userText, model, config)).reply : '';
+    store.save(session);
+    const after = session.speak ?? session.lang;
+    return { reply, switchTo: canSwitch && after !== before ? after : null };
+  })();
+
+  if (body.stream === false) {
+    const { reply, switchTo } = await turn;
+    return send(res, body, id, mdl, reply, switchTo);
+  }
+
+  // Streaming: open the stream at once; if the answer is slow, speak a short filler so the caller never hears silence
+  // (and ElevenLabs gets its first words well inside its wait limit). Fillers contain no numbers or verdicts.
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+  sseChunk(res, id, mdl, { role: 'assistant' });
+  const firstMs = Number(process.env.EL_FILLER_MS ?? 2500);
+  const secondMs = Number(process.env.EL_FILLER2_MS ?? 9000);
+  let done = false;
+  const timers = [
+    setTimeout(() => { if (!done) sseChunk(res, id, mdl, { content: filler(session, 0) + ' ' }); }, firstMs),
+    setTimeout(() => { if (!done) sseChunk(res, id, mdl, { content: filler(session, 1) + ' ' }); }, secondMs),
+  ];
+  try {
+    const { reply, switchTo } = await turn;
+    done = true;
+    timers.forEach(clearTimeout);
+    finishStream(res, id, mdl, reply, switchTo);
+  } catch {
+    done = true;
+    timers.forEach(clearTimeout);
+    finishStream(res, id, mdl, filler(session, 2), null);
+  }
 }
 
+// First filler rotates so it doesn't sound robotic on every slow turn; then a patience line; then an error line.
+const FILLERS: Record<string, { first: string[]; second: string; error: string }> = {
+  de: { first: ['Einen Moment bitte.', 'Ich schaue kurz nach.', 'Gleich, einen Augenblick.'], second: 'Danke für Ihre Geduld, ich bin gleich so weit.', error: 'Entschuldigung, das hat nicht geklappt. Können Sie das bitte wiederholen?' },
+  en: { first: ['One moment, please.', 'Let me check that.', 'Just a second.'], second: "Thank you for your patience, I'm nearly there.", error: "Sorry, that didn't work. Could you say that again?" },
+  fr: { first: ['Un instant, s’il vous plaît.', 'Je vérifie.', 'Une seconde.'], second: 'Merci de votre patience, j’y suis presque.', error: 'Désolé, cela n’a pas fonctionné. Pouvez-vous répéter ?' },
+  it: { first: ['Un momento, per favore.', 'Controllo subito.', 'Un attimo.'], second: 'Grazie per la pazienza, ci sono quasi.', error: 'Mi scusi, non ha funzionato. Può ripetere?' },
+  es: { first: ['Un momento, por favor.', 'Lo compruebo.', 'Un segundo.'], second: 'Gracias por su paciencia, ya casi está.', error: 'Lo siento, no ha funcionado. ¿Puede repetirlo?' },
+  nl: { first: ['Een moment alstublieft.', 'Ik kijk het even na.', 'Een ogenblik.'], second: 'Dank voor uw geduld, ik ben er bijna.', error: 'Sorry, dat ging mis. Kunt u dat herhalen?' },
+  pl: { first: ['Chwileczkę, proszę.', 'Już sprawdzam.', 'Moment.'], second: 'Dziękuję za cierpliwość, już prawie gotowe.', error: 'Przepraszam, to się nie udało. Czy może Pan/Pani powtórzyć?' },
+  pt: { first: ['Um momento, por favor.', 'Vou verificar.', 'Só um instante.'], second: 'Obrigado pela paciência, estou quase lá.', error: 'Desculpe, não funcionou. Pode repetir?' },
+};
+/** 0 = first filler (rotates per caller turn), 1 = patience line, 2 = error line. In the caller's current language. */
+export const filler = (s: Session, i: 0 | 1 | 2) => {
+  const f = FILLERS[s.speak ?? s.lang] ?? FILLERS.de;
+  if (i === 1) return f.second;
+  if (i === 2) return f.error;
+  const turnNo = s.messages.filter((m) => m.role === 'user').length;
+  return f.first[(turnNo - 1 + f.first.length) % f.first.length];
+};
+
+function finishStream(res: ServerResponse, id: string, mdl: string, reply: string, switchTo: string | null) {
+  if (reply) for (const part of reply.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) ?? [reply]) sseChunk(res, id, mdl, { content: part });
+  if (switchTo) sseChunk(res, id, mdl, { tool_calls: [langToolCall(switchTo)] });
+  sseChunk(res, id, mdl, {}, switchTo ? 'tool_calls' : 'stop');
+  res.write('data: [DONE]\n\n');
+  res.end();
+}
+
+const langToolCall = (lang: string) => ({ index: 0, id: `call_lang_${Date.now()}`, type: 'function', function: { name: 'language_detection', arguments: JSON.stringify({ reason: `The caller is speaking ${lang}.`, language: lang }) } });
+
 function send(res: ServerResponse, body: OaiRequest, id: string, mdl: string, reply: string, switchTo: string | null) {
-  const toolCall = switchTo
-    ? { index: 0, id: `call_lang_${Date.now()}`, type: 'function', function: { name: 'language_detection', arguments: JSON.stringify({ reason: `The caller is speaking ${switchTo}.`, language: switchTo }) } }
-    : null;
+  const toolCall = switchTo ? langToolCall(switchTo) : null;
   if (body.stream === false) {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({
@@ -90,12 +145,7 @@ function send(res: ServerResponse, body: OaiRequest, id: string, mdl: string, re
   }
   res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
   sseChunk(res, id, mdl, { role: 'assistant' });
-  // Sentence-sized chunks let ElevenLabs start speaking before the whole reply is out.
-  if (reply) for (const part of reply.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) ?? [reply]) sseChunk(res, id, mdl, { content: part });
-  if (toolCall) sseChunk(res, id, mdl, { tool_calls: [toolCall] });
-  sseChunk(res, id, mdl, {}, toolCall ? 'tool_calls' : 'stop');
-  res.write('data: [DONE]\n\n');
-  res.end();
+  finishStream(res, id, mdl, reply, switchTo);
 }
 
 /** Prompt text for the ElevenLabs agent. Rules live in our orchestrator, not here. */
